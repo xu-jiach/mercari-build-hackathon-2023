@@ -3,7 +3,7 @@ run-name: backend build ${{ github.actor }} is building ${{ github.ref_name }}
 on: [push]
 
 env:
-  TEAM_NUM: team0 # Update team number after fork
+  TEAM_NUM: team13 # Update team number after fork
   REGISTRY: ghcr.io
   IMAGE_BACKEND: ${{ github.repository }}-backend
   IMAGE_FRONTEND: ${{ github.repository }}-frontend
