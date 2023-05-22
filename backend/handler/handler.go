@@ -267,7 +267,7 @@ func (h *Handler) Sell(c echo.Context) error {
 
 	item, err := h.ItemRepo.GetItem(ctx, req.ItemID)
 	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -422,7 +422,7 @@ func (h *Handler) AddBalance(c echo.Context) error {
 
 	user, err := h.UserRepo.GetUser(ctx, userID)
 	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -444,7 +444,7 @@ func (h *Handler) GetBalance(c echo.Context) error {
 
 	user, err := h.UserRepo.GetUser(ctx, userID)
 	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -476,14 +476,14 @@ func (h *Handler) Purchase(c echo.Context) error {
 
 	user, err := h.UserRepo.GetUser(ctx, userID)
 	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	item, err := h.ItemRepo.GetItem(ctx, int32(itemID))
 	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -499,7 +499,7 @@ func (h *Handler) Purchase(c echo.Context) error {
 
 	seller, err := h.UserRepo.GetUser(ctx, sellerID)
 	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
