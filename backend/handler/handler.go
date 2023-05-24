@@ -10,6 +10,10 @@ import (
 	"strconv"
 	"time"
 
+	// newly added
+	"github.com/go-playground/validator/v10"
+
+	// new added one ended here
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/mercari-build/mecari-build-hackathon-2023/backend/db"
@@ -32,8 +36,9 @@ type InitializeResponse struct {
 }
 
 type registerRequest struct {
-	Name     string `json:"name"`
-	Password string `json:"password"`
+	// name and password are set be aplhanumeric only
+	Name     string `json:"name" validate:"required,min=4,max=20,alphanum"`
+	Password string `json:"password" validate:"required,min=6,max=20,alphanum"`
 }
 
 type registerResponse struct {
@@ -143,6 +148,25 @@ func (h *Handler) Register(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
+
+	// Validation
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		fmt.Println(err)
+		validationErrors := err.(validator.ValidationErrors)
+
+		// Initialize an empty slice for error messages
+		ErrMsgs := make([]string, len(validationErrors))
+
+		// Loop through the validation errors, mapping each to a user-friendly message
+		for i, e := range validationErrors {
+			ErrMsgs[i] = mapErrorMessage(e)
+		}
+
+		// Return an HTTP error messages
+		return echo.NewHTTPError(http.StatusBadRequest, ErrMsgs)
+	}
+	// end of validation
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -530,4 +554,23 @@ func getEnv(key string, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func mapErrorMessage(e validator.FieldError) string {
+	var ErrMsg string
+
+	switch e.Tag() {
+	case "required":
+		ErrMsg = fmt.Sprintf("%s is required", e.Field())
+	case "min":
+		ErrMsg = fmt.Sprintf("%s must be at least %s characters long", e.Field(), e.Param())
+	case "max":
+		ErrMsg = fmt.Sprintf("%s must be at most %s characters long", e.Field(), e.Param())
+	case "alphanum":
+		ErrMsg = fmt.Sprintf("%s must only contain alphanumeric characters", e.Field())
+	default:
+		ErrMsg = fmt.Sprintf("%s is not valid", e.Field())
+	}
+
+	return ErrMsg
 }
