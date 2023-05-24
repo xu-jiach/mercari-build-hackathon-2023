@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
-import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 
 export const Login = () => {
@@ -63,14 +62,8 @@ export const Login = () => {
           }}
         />
         <button onClick={onSubmit} id="MerButton">
-
+          Log in
         </button>
-        <Stack spacing={2} direction="row">
-      <Button variant="text">Text</Button>
-      <Button variant="contained">Contained</Button>
-      <Button variant="outlined">Outlined</Button>
-    </Stack>
-
       </div>
     </div>
   );
