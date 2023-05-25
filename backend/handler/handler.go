@@ -95,7 +95,7 @@ type addItemResponse struct {
 }
 
 type addBalanceRequest struct {
-	Balance int64 `json:"balance"`
+	Balance int64 `json:"balance" validate:"number,get=0"`
 }
 
 type getBalanceResponse struct {
@@ -527,6 +527,11 @@ func (h *Handler) AddBalance(c echo.Context) error {
 	req := new(addBalanceRequest)
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	// Checking if the balance to be added is negative
+	if req.Balance < 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Cannot add negative balance")
 	}
 
 	userID, err := getUserID(c)
