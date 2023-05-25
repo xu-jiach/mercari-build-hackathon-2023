@@ -49,12 +49,14 @@ func (r *UserDBRepository) UpdateBalance(ctx context.Context, id int64, balance 
 
 type ItemRepository interface {
 	AddItem(ctx context.Context, item domain.Item) (domain.Item, error)
+	AddCategory(ctx context.Context, category domain.Category) (domain.Category, error)
 	GetItem(ctx context.Context, id int32) (domain.Item, error)
 	GetItemImage(ctx context.Context, id int32) ([]byte, error)
 	GetOnSaleItems(ctx context.Context) ([]domain.Item, error)
 	GetItemsByUserID(ctx context.Context, userID int64) ([]domain.Item, error)
 	GetCategory(ctx context.Context, id int64) (domain.Category, error)
 	GetCategories(ctx context.Context) ([]domain.Category, error)
+	GetItemByKeyword(ctx context.Context, keyword string) ([]domain.Item, error)
 	UpdateItemStatus(ctx context.Context, id int32, status domain.ItemStatus) error
 }
 
@@ -147,6 +149,17 @@ func (r *ItemDBRepository) GetCategory(ctx context.Context, id int64) (domain.Ca
 	return cat, row.Scan(&cat.ID, &cat.Name)
 }
 
+func (r *ItemDBRepository) AddCategory(ctx context.Context, category domain.Category) (domain.Category, error) {
+	var newCategory domain.Category
+
+	err := r.QueryRowContext(ctx, "INSERT INTO category (name) VALUES (?) RETURNING *", category.Name).Scan(&newCategory.ID, &newCategory.Name)
+	if err != nil {
+		return domain.Category{}, err
+	}
+
+	return newCategory, nil
+}
+
 func (r *ItemDBRepository) GetCategories(ctx context.Context) ([]domain.Category, error) {
 	rows, err := r.QueryContext(ctx, "SELECT * FROM category")
 	if err != nil {
@@ -166,4 +179,26 @@ func (r *ItemDBRepository) GetCategories(ctx context.Context) ([]domain.Category
 		return nil, err
 	}
 	return cats, nil
+}
+
+func (r *ItemDBRepository) GetItemByKeyword(ctx context.Context, keyword string) ([]domain.Item, error) {
+	pattern := "%" + keyword + "%"
+	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE name LIKE ?", pattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []domain.Item
+	for rows.Next() {
+		var item domain.Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Price, &item.Description, &item.CategoryID, &item.UserID, &item.Image, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

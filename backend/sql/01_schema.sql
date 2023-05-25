@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users
 CREATE TABLE IF NOT EXISTS category
 (
     id   integer primary key,
-    name varchar(50)
+    name varchar(50) unique
 );
 
 CREATE TABLE IF NOT EXISTS status
