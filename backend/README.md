@@ -7,6 +7,12 @@ $ cd backend # move to mercari-build-hackathon-2023/backend
 $ go run main.go
 ```
 
+Please call this endpoint for initialize data. 
+
+```shell
+$ curl -X POST 'http://127.0.0.1:9000/initialize'
+```
+
 
 ### Spec
 
