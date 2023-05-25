@@ -315,8 +315,8 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 
 	// passing error if the image is not jpeg
-	if file.Header.Get("Content-Type") != "image/jpeg" {
-		return echo.NewHTTPError(http.StatusBadRequest, "file type must be jpeg")
+	if file.Header.Get("Content-Type") != "image/jpeg" && file.Header.Get("Content-Type") != "image/png" {
+		return echo.NewHTTPError(http.StatusBadRequest, "file type must be jpeg or png")
 	}
 
 	if _, err := io.Copy(blob, src); err != nil {
@@ -524,7 +524,14 @@ func (h *Handler) GetImage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.Blob(http.StatusOK, "image/jpeg", data)
+	// decode content type from
+	contentType := http.DetectContentType(data)
+
+	if contentType != "image/jpeg" && contentType != "image/png" {
+		return echo.NewHTTPError(http.StatusInternalServerError, "invalid image type")
+	}
+
+	return c.Blob(http.StatusOK, contentType, data)
 	// TODO: might need to change it to accept both jpeg and png
 }
 
