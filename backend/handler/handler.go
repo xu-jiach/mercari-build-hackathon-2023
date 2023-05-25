@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -355,6 +356,16 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
+	// get the current logged in user information to req
+	var err error
+	req.UserID, err = getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	//debug: print the userID from the request
+	log.Printf("Request UserID: %v", req.UserID)
+
 	item, err := h.ItemRepo.GetItem(ctx, req.ItemID)
 	// TODO: not found handling
 	// http.StatusNotFound(404)
@@ -366,6 +377,7 @@ func (h *Handler) Sell(c echo.Context) error {
 	}
 	// no need to check user 404 because it is loggged in already
 
+	log.Printf("Item UserID: %v", item.UserID)
 	// TODO: check req.UserID and item.UserID
 	// http.StatusPreconditionFailed(412)
 	if req.UserID != item.UserID {
