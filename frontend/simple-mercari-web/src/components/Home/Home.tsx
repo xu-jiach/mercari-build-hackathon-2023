@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
 import "react-toastify/dist/ReactToastify.css";
+import Divider from '@mui/material/Divider';
+import { styled } from '@mui/material/styles';
 
 interface Item {
   id: number;
@@ -40,16 +42,30 @@ export const Home = () => {
     fetchItems();
   }, []);
 
+  const Root = styled('div')(({ theme }) => ({
+    width: "300px",
+    ...theme.typography.body2,
+    '& > :not(style) + :not(style)': {
+      marginTop: theme.spacing(2),
+    },
+  }));
+
   const signUpAndSignInPage = (
-    <>
-      <div>
-        <Signup />
-      </div>
-      or
+    <div className="sign-in-up-page">
+      <div id="accountForm">
       <div>
         <Login />
       </div>
-    </>
+      <Root><Divider sx={{ mt: 3}}>or</Divider>  </Root>
+      <div>
+        <Signup />
+      </div>
+      </div>
+      <div id="featured-items">
+        <img id="featured-items-img" src="https://media.wired.com/photos/629133e5e9a46d033b3380c7/master/w_2560%2Cc_limit/Finding-a-PlayStation-5-Is-About-to-Get-Easier-Gear-shutterstock_1855958302.jpg" alt="(placeholder)featured image" />
+      </div>
+    </div>
+    
   );
 
   const itemListPage = (
