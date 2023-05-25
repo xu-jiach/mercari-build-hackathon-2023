@@ -18,9 +18,9 @@ import (
 	// new added one ended here
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/mercari-build/mecari-build-hackathon-2023/backend/db"
-	"github.com/mercari-build/mecari-build-hackathon-2023/backend/domain"
 	"github.com/pkg/errors"
+	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/db"
+	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 
