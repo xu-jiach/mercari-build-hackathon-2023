@@ -18,8 +18,8 @@ import (
 	// new added one ended here
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/db"
-	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/domain"
+	"github.com/mercari-build/mecari-build-hackathon-2023/backend/db"
+	"github.com/mercari-build/mecari-build-hackathon-2023/backend/domain"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -357,7 +357,7 @@ func (h *Handler) Sell(c echo.Context) error {
 
 	item, err := h.ItemRepo.GetItem(ctx, req.ItemID)
 	// TODO: not found handling
-	// http.StatusPreconditionFailed(412)
+	// http.StatusNotFound(404)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "Item not found")
@@ -643,7 +643,6 @@ func (h *Handler) Purchase(c echo.Context) error {
 	if err := h.UserRepo.UpdateBalance(ctx, userID, user.Balance-item.Price); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-
 
 	sellerID := item.UserID
 
