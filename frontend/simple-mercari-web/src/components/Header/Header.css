@@ -1,6 +1,7 @@
 header {
   display: flex;
   flex-direction: row;
+  margin: 1.5em;
 }
 
 .LogoutButtonContainer {
@@ -8,4 +9,9 @@ header {
   right: 1rem;
   top: 1rem;
   width: 100px;
+}
+
+.logo{
+  height: 3.5em;
+  width: fit-content;
 }

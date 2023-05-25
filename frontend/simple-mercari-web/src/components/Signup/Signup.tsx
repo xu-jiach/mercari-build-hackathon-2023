@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
 
 export const Signup = () => {
   const [name, setName] = useState<string>();
@@ -39,30 +41,26 @@ export const Signup = () => {
   return (
     <div>
       <div className="Signup">
-        <label id="MerInputLabel">User Name</label>
-        <input
+        <TextField id="outlined-basic" label="username" variant="outlined" className="text-boxes" sx={{ mt: 3}}
           type="text"
           name="name"
-          id="MerTextInput"
           placeholder="name"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setName(e.target.value);
           }}
           required
-        />
-        <label id="MerInputLabel">Password</label>
-        <input
+        /> <br/>
+        <TextField id="outlined-basic" label="password" variant="outlined" className="text-boxes" sx={{ mt: 3}}
           type="password"
           name="password"
-          id="MerTextInput"
           placeholder="password"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setPassword(e.target.value);
           }}
         />
-        <button onClick={onSubmit} id="MerButton">
+        <Button variant="outlined" onClick={onSubmit} id="sign-in-up-btn" color="error" sx={{ mt: 3}}>
           Signup
-        </button>
+        </Button>
         {userID ? (
           <p>Use "{userID}" as UserID for login</p>
         ) : null}
