@@ -106,7 +106,7 @@ export const Listing: React.FC = () => {
       .then((items) => setCategories(items))
       .catch((err) => {
         console.log(`GET error:`, err);
-        toast.error(err.message);
+        toast.error("Error: " + err.status);
       });
   };
 

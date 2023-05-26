@@ -34,7 +34,7 @@ export const Home = () => {
       })
       .catch((err) => {
         console.log(`GET error:`, err);
-        toast.error(err.message);
+        toast.error("Error: " + err.status);
       });
   };
 
@@ -65,7 +65,7 @@ export const Home = () => {
         <img id="featured-items-img" src="https://media.wired.com/photos/629133e5e9a46d033b3380c7/master/w_2560%2Cc_limit/Finding-a-PlayStation-5-Is-About-to-Get-Easier-Gear-shutterstock_1855958302.jpg" alt="(placeholder)featured image" />
       </div>
     </div>
-    
+
   );
 
   const itemListPage = (
