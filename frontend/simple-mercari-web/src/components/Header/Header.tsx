@@ -1,6 +1,6 @@
 import { useCookies } from "react-cookie";
 import "./Header.css";
-import logo from '/workspace/mercari-build-hackathon-2023/frontend/simple-mercari-web/src/components/assets/logo.png'
+import logo from '../assets/logo.png'
 
 export const Header: React.FC = () => {
   const [cookies, _, removeCookie] = useCookies(["userID", "token"]);

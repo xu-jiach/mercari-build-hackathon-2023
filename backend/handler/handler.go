@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -84,18 +85,32 @@ type sellRequest struct {
 }
 
 type addItemRequest struct {
-	Name        string `form:"name" validate:"required,min=1,max=35"`
-	CategoryID  int64  `form:"category_id" validate:"required,number"`
-	Price       int64  `form:"price" validate:"required,number,gte=0,lte=99999999"`
-	Description string `form:"description" validate:"required,min=1,max=2555"`
+	Name         string `form:"name" validate:"required,min=1,max=35"`
+	CategoryID   int64  `form:"category_id" validate:"number"`
+	CategoryName string `form:"category_name" validate:"min=0,max=35"`
+	Price        int64  `form:"price" validate:"required,number,gte=0,lte=99999999"`
+	Description  string `form:"description" validate:"required,min=1,max=2555"`
+}
+
+type editItemRequest struct {
+	ItemID       int32  `form:"item_id" `
+	Name         string `form:"name" validate:"required,min=1,max=35"`
+	CategoryID   int64  `form:"category_id" validate:"number"`
+	CategoryName string `form:"category_name" validate:"min=0,max=35"`
+	Price        int64  `form:"price" validate:"required,number,gte=0,lte=99999999"`
+	Description  string `form:"description" validate:"required,min=1,max=2555"`
 }
 
 type addItemResponse struct {
 	ID int64 `json:"id"`
 }
 
+type editItemResponse struct {
+	ID int64 `json:"id"`
+}
+
 type addBalanceRequest struct {
-	Balance int64 `json:"balance" validate:"number,get=0"`
+	Balance int64 `json:"balance" validate:"number,gte=0"`
 }
 
 type getBalanceResponse struct {
@@ -314,13 +329,34 @@ func (h *Handler) AddItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "file size exceeds limit")
 	}
 
-	// passing error if the image is not jpeg
+	// passing error if the image is not jpeg or png
 	if file.Header.Get("Content-Type") != "image/jpeg" && file.Header.Get("Content-Type") != "image/png" {
 		return echo.NewHTTPError(http.StatusBadRequest, "file type must be jpeg or png")
 	}
 
 	if _, err := io.Copy(blob, src); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// check if the category exists
+	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// Create a new category with the provided name if doesn't
+			var category domain.Category
+			category, err = h.ItemRepo.AddCategory(ctx, domain.Category{
+				Name: req.CategoryName,
+			})
+			if err != nil {
+				// Handle error creating category
+				return echo.NewHTTPError(http.StatusInternalServerError, err)
+			}
+
+			// Update req.CategoryID with the new category's ID
+			req.CategoryID = category.ID
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
 	}
 
 	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
@@ -345,6 +381,111 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
+}
+
+// EditItem edits an item
+func (h *Handler) EditItem(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	itemIdParam := c.Param("itemID")
+	log.Println("itemIdParam:", itemIdParam)
+	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
+	}
+
+	req := new(editItemRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	req.ItemID = int32(itemId)
+
+	// Validation
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+
+		// Initialize an empty slice for error messages
+		ErrMsgs := make([]string, len(validationErrors))
+
+		// Loop through the validation errors, mapping each to a user-friendly message
+		for i, e := range validationErrors {
+			ErrMsgs[i] = mapErrorMessage(e)
+		}
+
+		// Return an HTTP error messages
+		return echo.NewHTTPError(http.StatusBadRequest, ErrMsgs)
+	}
+
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	// Check if the user is the owner of the item
+	existingItem, err := h.ItemRepo.GetItem(ctx, req.ItemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	if existingItem.UserID != userID {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User is not the owner of the item")
+	}
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer src.Close()
+
+	var dest []byte
+	blob := bytes.NewBuffer(dest)
+
+	// Similar checks as in AddItem
+	const MaxSize = 1 << 20 // 1MB
+	if file.Size > MaxSize {
+		return echo.NewHTTPError(http.StatusBadRequest, "file size exceeds limit")
+	}
+
+	if file.Header.Get("Content-Type") != "image/jpeg" && file.Header.Get("Content-Type") != "image/png" {
+		return echo.NewHTTPError(http.StatusBadRequest, "file type must be jpeg or png")
+	}
+
+	if _, err := io.Copy(blob, src); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Check if the category exists
+	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid categoryID")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Assuming req has an ID field
+	item, err := h.ItemRepo.EditItem(c.Request().Context(), domain.Item{
+		ID:          req.ItemID,
+		Name:        req.Name,
+		CategoryID:  req.CategoryID,
+		UserID:      userID,
+		Price:       req.Price,
+		Description: req.Description,
+		Image:       blob.Bytes(),
+		Status:      domain.ItemStatusInitial,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, editItemResponse{ID: int64(item.ID)}) // Assume there is a similar structure as addItemResponse
 }
 
 func (h *Handler) Sell(c echo.Context) error {
@@ -543,6 +684,12 @@ func (h *Handler) AddBalance(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
+	// Validate the request
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
 	// Checking if the balance to be added is negative
 	if req.Balance < 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Cannot add negative balance")
@@ -690,6 +837,40 @@ func getUserID(c echo.Context) (int64, error) {
 	return claims.UserID, nil
 }
 
+// Search Item By Keyword
+func (h *Handler) SearchItemByKeyword(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Retrieve the keyword from query parameters
+	keyword := c.QueryParam("name")
+	if keyword == "" {
+		// Keyword is required
+		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
+	}
+
+	// Call your repository method
+	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	// return the response
+	var res []getUserItemsResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
 func getEnv(key string, defaultValue string) string {
 	value := os.Getenv(key)
 	if value == "" {
@@ -717,6 +898,8 @@ func mapErrorMessage(e validator.FieldError) string {
 		ErrMsg = fmt.Sprintf("%s must be less than or equal to %s", e.Field(), e.Param())
 	case "password":
 		ErrMsg = ("The password needs to be 6-20 characters long, and contain at least two groups of the following: uppercase letters, lowercase letters, numbers, and symbols")
+	case "number":
+		ErrMsg = fmt.Sprintf("%s must be a number", e.Field())
 	default:
 		ErrMsg = fmt.Sprintf("%s is not valid", e.Field())
 	}
