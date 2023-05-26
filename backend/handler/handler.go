@@ -355,6 +355,7 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
+<<<<<<< HEAD
 	// get the current logged in user information to req
 	var err error
 	req.UserID, err = getUserID(c)
@@ -362,6 +363,8 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
+=======
+>>>>>>> parent of 02abc2d (fix in sell function. get UserID to the request.)
 	item, err := h.ItemRepo.GetItem(ctx, req.ItemID)
 	// TODO: not found handling
 	// http.StatusNotFound(404)
