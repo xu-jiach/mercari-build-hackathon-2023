@@ -52,20 +52,20 @@ export const Home = () => {
 
   const signUpAndSignInPage = (
     <div className="sign-in-up-page">
-      <div id="accountForm">
-      <div>
-        <Login />
-      </div>
-      <Root><Divider sx={{ mt: 3}}>or</Divider>  </Root>
-      <div>
-        <Signup />
-      </div>
+      <div id="account-form">
+        <div>
+          <Login />
+        </div>
+        <Root><Divider sx={{ mt: 3}}>or</Divider>  </Root>
+        <div>
+          <Signup />
+        </div>
       </div>
       <div id="featured-items">
-        <img id="featured-items-img" src="https://media.wired.com/photos/629133e5e9a46d033b3380c7/master/w_2560%2Cc_limit/Finding-a-PlayStation-5-Is-About-to-Get-Easier-Gear-shutterstock_1855958302.jpg" alt="(placeholder)featured image" />
+        <img id="featured-items-img" src="https://media.wired.com/photos/629133e5e9a46d033b3380c7/master/w_2560%2Cc_limit/Finding-a-PlayStation-5-Is-About-to-Get-Easier-Gear-shutterstock_1855958302.jpg" alt="(placeholder)featured" />
       </div>
     </div>
-    
+
   );
 
   const itemListPage = (
