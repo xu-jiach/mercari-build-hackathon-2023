@@ -24,20 +24,11 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64, error) {
-	// Start a new transaction
-	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
-	if err != nil {
+	if _, err := r.ExecContext(ctx, "INSERT INTO users (name, password) VALUES (?, ?)", user.Name, user.Password); err != nil {
 		return 0, err
 	}
-
-	if _, err := tx.ExecContext(ctx, "INSERT INTO users (name, password VALUES (?, ?)", user.Name, user.Password); err != nil {
-		tx.Rollback()
-		return 0, echo.NewHTTPError(http.StatusConflict, err)
-	} else {
-		tx.Commit()
-	}
-
-	// Retrieve the ID of the last inserted row
+	// TODO: if other insert query is executed at the same time, it might return wrong id
+	// http.StatusConflict(409) 既に同じIDがあった場合
 	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
 
 	var id int64
