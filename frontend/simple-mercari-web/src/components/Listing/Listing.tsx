@@ -91,7 +91,7 @@ export const Listing: React.FC = () => {
       })
         .then(() => {
           toast.success("Item updated successfully!");
-        })
+        })     
         .catch((error: Error) => {
           toast.error(error.message);
           console.error("PUT error:", error);
