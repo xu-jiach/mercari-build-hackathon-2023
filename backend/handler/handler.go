@@ -109,6 +109,18 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
+// Newly added struct
+// create a addcategory request struct
+type addCategoryRequest struct {
+	Name string `json:"categories_name"`
+}
+
+// create a addcategory response struct
+type addCategoryResponse struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
 type Handler struct {
 	DB       *sql.DB
 	UserRepo db.UserRepository
