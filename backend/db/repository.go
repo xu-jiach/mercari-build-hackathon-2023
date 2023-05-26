@@ -25,7 +25,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 
 func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64, error) {
 	// Start a new transaction
-	tx, err := r.BeginTx(ctx, nil)
+	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		return 0, err
 	}
