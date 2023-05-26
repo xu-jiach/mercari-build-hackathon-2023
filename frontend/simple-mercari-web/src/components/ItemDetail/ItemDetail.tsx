@@ -6,9 +6,9 @@ import { toast } from "react-toastify";
 import { fetcher, fetcherBlob } from "../../helper";
 
 const ItemStatus = {
-  ItemStatusInitial: 0,
-  ItemStatusOnSale: 1,
-  ItemStatusSoldOut: 2,
+  ItemStatusInitial: 1,
+  ItemStatusOnSale: 2,
+  ItemStatusSoldOut: 3,
 } as const;
 
 type ItemStatus = (typeof ItemStatus)[keyof typeof ItemStatus];

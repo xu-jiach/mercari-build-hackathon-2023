@@ -3,8 +3,9 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/domain"
 )
 
@@ -29,40 +30,18 @@ func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64
 		return 0, err
 	}
 
-	// Check if a user with the same name already exists
-	row := tx.QueryRowContext(ctx, "SELECT * FROM users WHERE name = ?", user.Name)
-	var existingUser domain.User
-	err = row.Scan(&existingUser)
-	if err != nil && err != sql.ErrNoRows {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO users (name, password VALUES (?, ?)", user.Name, user.Password); err != nil {
 		tx.Rollback()
-		return 0, err
-	}
-	if err != sql.ErrNoRows {
-		tx.Rollback()
-		return 0, fmt.Errorf("user with name %s already exists", user.Name)
-	}
-
-	// Insert the new user
-	if _, err := tx.ExecContext(ctx, "INSERT INTO users (name, password) VALUES (?, ?)", user.Name, user.Password); err != nil {
-		tx.Rollback()
-		return 0, err
+		return 0, echo.NewHTTPError(http.StatusConflict, err)
+	} else {
+		tx.Commit()
 	}
 
 	// Retrieve the ID of the last inserted row
-	row = tx.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
+	row := tx.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
 
 	var id int64
-	if err := row.Scan(&id); err != nil {
-		tx.Rollback()
-		return 0, err
-	}
-
-	// If everything goes well, commit the transaction
-	if err := tx.Commit(); err != nil {
-		return 0, err
-	}
-
-	return id, nil
+	return id, row.Scan(&id)
 }
 
 func (r *UserDBRepository) GetUser(ctx context.Context, id int64) (domain.User, error) {
@@ -103,8 +82,16 @@ func NewItemRepository(db *sql.DB) ItemRepository {
 
 // Modify the AddItem method to use transaction
 func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domain.Item, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status); err != nil {
+	tx, err := r.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	if err != nil {
 		return domain.Item{}, err
+	}
+
+	if _, err := r.ExecContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status); err != nil {
+		tx.Rollback()
+		return domain.Item{}, echo.NewHTTPError(http.StatusConflict, err)
+	} else {
+		tx.Commit()
 	}
 	// TODO: if other insert query is executed at the same time, it might return wrong id
 	// http.StatusConflict(409) 既に同じIDがあった場合
