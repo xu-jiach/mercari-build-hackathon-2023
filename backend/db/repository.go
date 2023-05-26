@@ -49,6 +49,7 @@ func (r *UserDBRepository) UpdateBalance(ctx context.Context, id int64, balance 
 
 type ItemRepository interface {
 	AddItem(ctx context.Context, item domain.Item) (domain.Item, error)
+	EditItem(ctx context.Context, item domain.Item) (domain.Item, error)
 	AddCategory(ctx context.Context, category domain.Category) (domain.Category, error)
 	GetItem(ctx context.Context, id int32) (domain.Item, error)
 	GetItemImage(ctx context.Context, id int32) ([]byte, error)
@@ -68,16 +69,81 @@ func NewItemRepository(db *sql.DB) ItemRepository {
 	return &ItemDBRepository{DB: db}
 }
 
+// Modify the AddItem method to use transaction
 func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domain.Item, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status); err != nil {
+	// start a new transaction
+	tx, err := r.BeginTx(ctx, nil)
+	if err != nil {
 		return domain.Item{}, err
 	}
-	// TODO: if other insert query is executed at the same time, it might return wrong id
-	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE rowid = LAST_INSERT_ROWID()")
 
+	// prepare statement
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)")
+	if err != nil {
+		tx.Rollback() // Rollback the transaction if there is any error
+		return domain.Item{}, err
+	}
+
+	// execute query
+	_, err = stmt.ExecContext(ctx, item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status)
+	if err != nil {
+		tx.Rollback() // Rollback the transaction if there is any error
+		return domain.Item{}, err
+	}
+
+	// Get the last inserted ID
+	row := tx.QueryRowContext(ctx, "SELECT * FROM items WHERE rowid = LAST_INSERT_ROWID()")
 	var res domain.Item
-	return res, row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
+	if err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt); err != nil {
+		tx.Rollback() // Rollback the transaction if there is any error
+		return domain.Item{}, err
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		tx.Rollback() // Rollback the transaction if there is any error
+		return domain.Item{}, err
+	}
+	return res, nil
+}
+
+// Create an Edit Method
+func (r *ItemDBRepository) EditItem(ctx context.Context, item domain.Item) (domain.Item, error) {
+	// start a new transaction
+	tx, err := r.BeginTx(ctx, nil)
+	if err != nil {
+		return domain.Item{}, err
+	}
+
+	// prepare statement
+	stmt, err := tx.PrepareContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, image = ?, status = ? WHERE id = ?")
+	if err != nil {
+		tx.Rollback() // Rollback the transaction if there is any error
+		return domain.Item{}, err
+	}
+
+	// execute query
+	_, err = stmt.ExecContext(ctx, item.Name, item.Price, item.Description, item.CategoryID, item.Image, item.Status, item.ID)
+	if err != nil {
+		tx.Rollback() // Rollback the transaction if there is any error
+		return domain.Item{}, err
+	}
+
+	// Get the updated item
+	row := tx.QueryRowContext(ctx, "SELECT * FROM items WHERE id = ?", item.ID)
+	var res domain.Item
+	if err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt); err != nil {
+		tx.Rollback() // Rollback the transaction if there is any error
+		return domain.Item{}, err
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		tx.Rollback() // Rollback the transaction if there is any error
+		return domain.Item{}, err
+	}
+
+	return res, nil
 }
 
 func (r *ItemDBRepository) GetItem(ctx context.Context, id int32) (domain.Item, error) {

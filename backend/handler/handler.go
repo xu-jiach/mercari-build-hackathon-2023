@@ -91,7 +91,20 @@ type addItemRequest struct {
 	Description  string `form:"description" validate:"required,min=1,max=2555"`
 }
 
+type editItemRequest struct {
+	ItemID       int32  `form:"item_id" `
+	Name         string `form:"name" validate:"required,min=1,max=35"`
+	CategoryID   int64  `form:"category_id" validate:"number"`
+	CategoryName string `form:"category_name" validate:"min=0,max=35"`
+	Price        int64  `form:"price" validate:"required,number,gte=0,lte=99999999"`
+	Description  string `form:"description" validate:"required,min=1,max=2555"`
+}
+
 type addItemResponse struct {
+	ID int64 `json:"id"`
+}
+
+type editItemResponse struct {
 	ID int64 `json:"id"`
 }
 
@@ -367,6 +380,101 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
+}
+
+// EditItem edits an item
+func (h *Handler) EditItem(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	req := new(editItemRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	// Validation
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+
+		// Initialize an empty slice for error messages
+		ErrMsgs := make([]string, len(validationErrors))
+
+		// Loop through the validation errors, mapping each to a user-friendly message
+		for i, e := range validationErrors {
+			ErrMsgs[i] = mapErrorMessage(e)
+		}
+
+		// Return an HTTP error messages
+		return echo.NewHTTPError(http.StatusBadRequest, ErrMsgs)
+	}
+
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	// Check if the user is the owner of the item
+	existingItem, err := h.ItemRepo.GetItem(ctx, req.ItemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	if existingItem.UserID != userID {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User is not the owner of the item")
+	}
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer src.Close()
+
+	var dest []byte
+	blob := bytes.NewBuffer(dest)
+
+	// Similar checks as in AddItem
+	const MaxSize = 1 << 20 // 1MB
+	if file.Size > MaxSize {
+		return echo.NewHTTPError(http.StatusBadRequest, "file size exceeds limit")
+	}
+
+	if file.Header.Get("Content-Type") != "image/jpeg" && file.Header.Get("Content-Type") != "image/png" {
+		return echo.NewHTTPError(http.StatusBadRequest, "file type must be jpeg or png")
+	}
+
+	if _, err := io.Copy(blob, src); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Check if the category exists
+	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid categoryID")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Assuming req has an ID field
+	item, err := h.ItemRepo.EditItem(c.Request().Context(), domain.Item{
+		ID:          req.ItemID,
+		Name:        req.Name,
+		CategoryID:  req.CategoryID,
+		UserID:      userID,
+		Price:       req.Price,
+		Description: req.Description,
+		Image:       blob.Bytes(),
+		Status:      domain.ItemStatusInitial,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, editItemResponse{ID: int64(item.ID)}) // Assume there is a similar structure as addItemResponse
 }
 
 func (h *Handler) Sell(c echo.Context) error {
