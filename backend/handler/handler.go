@@ -10,7 +10,6 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -150,10 +149,10 @@ func (h *Handler) Register(c echo.Context) error {
 
 	//	Validation
 	// Pending to change back to the original approach if have time
-	if !isValidName(req.Name) {
+	if len(req.Name) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "name is invalid")
 	}
-	if !isValidPassword(req.Password) {
+	if len(req.Password) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "password is invalid")
 	}
 
@@ -181,7 +180,7 @@ func (h *Handler) Login(c echo.Context) error {
 
 	//	Validation
 	// Pending to change back to the original approach if have time
-	if !isValidPassword(req.Password) {
+	if len(req.Password) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "password is invalid")
 	}
 
@@ -705,15 +704,15 @@ func getEnv(key string, defaultValue string) string {
 // 	return domain.Category{}, fmt.Errorf("Category already exists")
 // }
 
-// a function check whether the name is valid or not. Name must be alphanumeric and 1-30 characters.
-func isValidName(name string) bool {
-	return regexp.MustCompile(`^[a-zA-Z0-9]{1,30}$`).MatchString(name)
-}
+// a function check whether the name is valid or not. Name must not be zero
+// func isValidName(name string) bool {
+// 	return len(name) == 0
+// }
 
-// a function check whether the password is valid or not. Password must 6-20 characters.
-func isValidPassword(password string) bool {
-	return regexp.MustCompile(`^.{6,20}$`).MatchString(password)
-}
+// // a function check whether the password is valid or not. Password must 6-20 characters.
+// func isValidPassword(password string) bool {
+// 	return len()
+// }
 
 // func isValidCategoryName(categoryName string) bool {
 // 	return regexp.MustCompile(`^[a-zA-Z]{1,30}$`).MatchString(categoryName)
