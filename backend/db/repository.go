@@ -38,7 +38,7 @@ func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64
 	}
 
 	// Retrieve the ID of the last inserted row
-	row := tx.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
+	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
 
 	var id int64
 	return id, row.Scan(&id)
@@ -87,7 +87,7 @@ func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domai
 		return domain.Item{}, err
 	}
 
-	if _, err := r.ExecContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status); err != nil {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status); err != nil {
 		tx.Rollback()
 		return domain.Item{}, echo.NewHTTPError(http.StatusConflict, err)
 	} else {
