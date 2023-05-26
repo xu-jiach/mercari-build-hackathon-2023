@@ -93,7 +93,7 @@ func run(ctx context.Context) int {
 	l.Use(echojwt.WithConfig(config))
 	l.GET("/users/:userID/items", h.GetUserItems)
 	l.POST("/items", h.AddItem)
-	l.PUT("/items", h.EditItem)
+	l.PUT("/items/:itemID", h.EditItem)
 	l.POST("/sell", h.Sell)
 	l.POST("/purchase/:itemID", h.Purchase)
 	l.GET("/balance", h.GetBalance)

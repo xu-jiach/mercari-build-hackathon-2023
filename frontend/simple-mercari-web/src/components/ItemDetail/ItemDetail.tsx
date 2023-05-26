@@ -30,6 +30,7 @@ export const ItemDetail = () => {
   const [item, setItem] = useState<Item>();
   const [itemImage, setItemImage] = useState<Blob>();
   const [cookies] = useCookies(["token", "userID"]);
+  const [isOwner, setIsOwner] = useState(false);
 
   const fetchItem = () => {
     fetcher<Item>(`/items/${params.id}`, {
@@ -40,9 +41,11 @@ export const ItemDetail = () => {
       },
     })
       .then((res) => {
-        console.log("GET success:", res);
-        setItem(res);
+          console.log("GET success:", res);
+          setItem(res);
+          setIsOwner(res.user_id === Number(cookies.userID)); // Set isOwner state here
       })
+
       .catch((err) => {
         console.log(`GET error:`, err);
         toast.error(err.message);
@@ -111,14 +114,24 @@ export const ItemDetail = () => {
               <br />
               <span>Description: {item.description}</span>
             </p>
-            {item.status == ItemStatus.ItemStatusSoldOut ? (
+              {item.status == ItemStatus.ItemStatusSoldOut ? (
               <button disabled={true} onClick={onSubmit} id="MerDisableButton">
                 SoldOut
               </button>
             ) : (
-              <button onClick={onSubmit} id="MerButton">
-                Purchase
-              </button>
+              <>
+                {isOwner && (
+                  <button
+                    onClick={() => navigate(`/edit-item/${item.id}`)} // Navigate to /edit-item/:itemId when the Edit button is clicked
+                    id="MerButton"
+                  >
+                    Edit
+                  </button>
+                )}
+                <button onClick={onSubmit} id="MerButton">
+                  Purchase
+                  </button>
+              </>
             )}
           </div>
         )}

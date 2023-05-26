@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -109,7 +110,7 @@ type editItemResponse struct {
 }
 
 type addBalanceRequest struct {
-	Balance int64 `json:"balance" validate:"number,get=0"`
+	Balance int64 `json:"balance" validate:"number,gte=0"`
 }
 
 type getBalanceResponse struct {
@@ -386,10 +387,20 @@ func (h *Handler) AddItem(c echo.Context) error {
 func (h *Handler) EditItem(c echo.Context) error {
 	ctx := c.Request().Context()
 
+	itemIdParam := c.Param("itemID")
+	log.Println("itemIdParam:", itemIdParam)
+	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
+	}
+
 	req := new(editItemRequest)
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
+
+	req.ItemID = int32(itemId)
 
 	// Validation
 	validate := validator.New()
@@ -673,6 +684,12 @@ func (h *Handler) AddBalance(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
+	// Validate the request
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
 	// Checking if the balance to be added is negative
 	if req.Balance < 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Cannot add negative balance")
@@ -881,6 +898,8 @@ func mapErrorMessage(e validator.FieldError) string {
 		ErrMsg = fmt.Sprintf("%s must be less than or equal to %s", e.Field(), e.Param())
 	case "password":
 		ErrMsg = ("The password needs to be 6-20 characters long, and contain at least two groups of the following: uppercase letters, lowercase letters, numbers, and symbols")
+	case "number":
+		ErrMsg = fmt.Sprintf("%s must be a number", e.Field())
 	default:
 		ErrMsg = fmt.Sprintf("%s is not valid", e.Field())
 	}
