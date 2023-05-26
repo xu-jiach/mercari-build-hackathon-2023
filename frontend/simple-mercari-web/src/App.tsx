@@ -22,6 +22,7 @@ export const App: React.VFC = () => {
             <Route path="/item/:id" element={<ItemDetail />} />
             <Route path="/user/:id" element={<UserProfile />} />
             <Route path="/sell" element={<Listing />} />
+            <Route path="/edit-item/:itemId" element={<Listing />} />
           </Routes>
         </div>
       </BrowserRouter>
