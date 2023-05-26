@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/domain"
 )
@@ -22,16 +23,46 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64, error) {
-
-	if _, err := r.ExecContext(ctx, "INSERT INTO users (name, password) VALUES (?, ?)", user.Name, user.Password); err != nil {
+	// Start a new transaction
+	tx, err := r.BeginTx(ctx, nil)
+	if err != nil {
 		return 0, err
 	}
-	// TODO: if other insert query is executed at the same time, it might return wrong id
-	// http.StatusConflict(409) 既に同じIDがあった場合
-	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
+
+	// Check if a user with the same name already exists
+	row := tx.QueryRowContext(ctx, "SELECT * FROM users WHERE name = ?", user.Name)
+	var existingUser domain.User
+	err = row.Scan(&existingUser)
+	if err != nil && err != sql.ErrNoRows {
+		tx.Rollback()
+		return 0, err
+	}
+	if err != sql.ErrNoRows {
+		tx.Rollback()
+		return 0, fmt.Errorf("user with name %s already exists", user.Name)
+	}
+
+	// Insert the new user
+	if _, err := tx.ExecContext(ctx, "INSERT INTO users (name, password) VALUES (?, ?)", user.Name, user.Password); err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	// Retrieve the ID of the last inserted row
+	row = tx.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
 
 	var id int64
-	return id, row.Scan(&id)
+	if err := row.Scan(&id); err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	// If everything goes well, commit the transaction
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
 
 func (r *UserDBRepository) GetUser(ctx context.Context, id int64) (domain.User, error) {
@@ -102,9 +133,9 @@ func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domai
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
 		return domain.Item{}, err
 	}
+
 	return res, nil
 }
 

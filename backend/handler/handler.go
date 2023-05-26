@@ -109,18 +109,6 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
-// Newly added struct
-// create a addcategory request struct
-type addCategoryRequest struct {
-	Name string `json:"categories_name"`
-}
-
-// create a addcategory response struct
-type addCategoryResponse struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-}
-
 type Handler struct {
 	DB       *sql.DB
 	UserRepo db.UserRepository
@@ -256,7 +244,7 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if req.Name == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
 	}
-	if req.CategoryID < 0 {
+	if req.CategoryID <= 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
 	}
 	if req.Description == "" {
@@ -285,27 +273,6 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if _, err := io.Copy(blob, src); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-
-	// // calling the CheckCategory function to check if the category exists in the database
-	// _, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
-	// if err != nil {
-	//     if err == sql.ErrNoRows {
-	//         // Create a new category with the provided name if doesn't exist
-	//         var category domain.Category
-	//         category, err = h.ItemRepo.AddCategory(ctx, domain.Category{
-	//             Name: req.CategoryName, // assuming `CategoryName` exists in `addItemRequest` struct
-	//         })
-	//         if err != nil {
-	//             // Handle error creating category
-	//             return err
-	//         }
-
-	//         // Update req.CategoryID with the new category's ID
-	//         req.CategoryID = category.ID
-	//     } else {
-	//         return echo.NewHTTPError(http.StatusInternalServerError, err)
-	//     }
-	// }
 
 	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
 	if err != nil {
@@ -748,6 +715,6 @@ func isValidPassword(password string) bool {
 	return regexp.MustCompile(`^.{6,20}$`).MatchString(password)
 }
 
-func isValidCategoryName(categoryName string) bool {
-	return regexp.MustCompile(`^[a-zA-Z]{1,30}$`).MatchString(categoryName)
-}
+// func isValidCategoryName(categoryName string) bool {
+// 	return regexp.MustCompile(`^[a-zA-Z]{1,30}$`).MatchString(categoryName)
+// }
