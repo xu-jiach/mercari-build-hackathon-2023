@@ -237,6 +237,12 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 
 	// validation
+	if file.Size > 1<<20 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	}
+	if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
+		return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
+	}
 	if req.Price <= 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
 	}
@@ -261,13 +267,6 @@ func (h *Handler) AddItem(c echo.Context) error {
 	blob := bytes.NewBuffer(dest)
 	// TODO: pass very big file
 	// http.StatusBadRequest(400)
-
-	if file.Size > 1<<20 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
-	}
-	if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
-		return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
-	}
 
 	if _, err := io.Copy(blob, src); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
