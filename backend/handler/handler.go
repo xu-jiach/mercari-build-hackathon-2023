@@ -366,6 +366,11 @@ func (h *Handler) EditItem(c echo.Context) error {
 	// }
 	// end of validation
 
+	// validation
+	if file.Size > 1<<20 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	}
+
 	src, err := file.Open()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -379,10 +384,6 @@ func (h *Handler) EditItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// validation
-	if file.Size > 1<<20 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
-	}
 	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
 	// }
@@ -575,21 +576,15 @@ func (h *Handler) GetImage(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	// TODO: overflow
-	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 32)
+	itemID, err := strconv.Atoi(c.Param("itemID"))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
+		return echo.NewHTTPError(http.StatusInternalServerError, "invalid itemID type")
 	}
 
+	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
 	data, err := h.ItemRepo.GetItemImage(ctx, int32(itemID))
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, "No image data found for this item")
-		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	if len(data) == 0 {
-		return echo.NewHTTPError(http.StatusNotFound, "No image data found for this item")
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	return c.Blob(http.StatusOK, "image/jpeg", data)
