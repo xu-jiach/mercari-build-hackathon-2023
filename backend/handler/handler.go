@@ -581,8 +581,8 @@ func (h *Handler) GetImage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
 	}
 	if itemID < math.MinInt32 || itemID > math.MaxInt32 {
-		return echo.NewHTTPError(http.StatusBadRequest, "itemID out of range")
-
+		return echo.NewHTTPError(http.StatusBadRequest, "ItemID out of range")
+	}
 	data, err := h.ItemRepo.GetItemImage(ctx, int32(itemID))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
