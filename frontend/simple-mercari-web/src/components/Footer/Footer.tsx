@@ -11,7 +11,7 @@ import ListItemText from '@mui/material/ListItemText';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import MenuIcon from '@mui/icons-material/Menu';
-import { FaHome, FaCamera, FaUser } from 'react-icons/fa';
+import { FaHome, FaCamera, FaUser, FaSignOutAlt } from 'react-icons/fa';
 
 const drawerWidth = 240;
 
@@ -54,7 +54,7 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 );
 
 export const Footer: React.FC = () => {
-  const [cookies] = useCookies(['userID']);
+  const [cookies, _, removeCookie] = useCookies(['userID', 'token']);
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
 
@@ -66,10 +66,16 @@ export const Footer: React.FC = () => {
     setOpen(false);
   };
 
+  const onLogout = () => {
+    removeCookie('userID');
+    removeCookie('token');
+    navigate('/');
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Drawer variant="permanent" open={open}>
-        <Box component="div" sx={{ pl: 3.5, pb: 4}}>
+        <Box component="div" sx={{ pl: 3.5, pb: 4 }}>
           <IconButton
             aria-label="open drawer"
             onClick={open ? handleDrawerClose : handleDrawerOpen}
@@ -88,23 +94,24 @@ export const Footer: React.FC = () => {
           </ListItem>
           <ListItem button onClick={() => navigate('/sell')}>
             <ListItemIcon sx={{ p: 1.5 }}>
-              <FaCamera/>
+              <FaCamera />
             </ListItemIcon>
             <ListItemText primary="Listing" />
           </ListItem>
-          <ListItem
-            button
-            onClick={() => navigate(`/user/${cookies.userID}`)}
-          >
+          <ListItem button onClick={() => navigate(`/user/${cookies.userID}`)}>
             <ListItemIcon sx={{ p: 1.5 }}>
               <FaUser />
             </ListItemIcon>
             <ListItemText primary="MyPage" />
           </ListItem>
+          <ListItem button onClick={onLogout}>
+            <ListItemIcon sx={{ p: 1.5 }}>
+              <FaSignOutAlt />
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItem>
         </List>
       </Drawer>
-
     </Box>
   );
-
 };

@@ -8,10 +8,12 @@ import "./App.css";
 import { Header } from "./components/Header/Header";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { ThemeProvider } from '@mui/material/styles';
+import theme from './theme';
 
 export const App: React.VFC = () => {
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <ToastContainer position="bottom-center"/>
 
       <BrowserRouter>
@@ -26,6 +28,6 @@ export const App: React.VFC = () => {
           </Routes>
         </div>
       </BrowserRouter>
-    </>
+    </ThemeProvider>
   );
 };
