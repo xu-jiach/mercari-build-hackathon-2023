@@ -254,6 +254,9 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if file.Size > 1<<20 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
 	}
+	if file.Size == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
+	}
 	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
 	// }
@@ -339,6 +342,7 @@ func (h *Handler) EditItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
 	if existingItem.UserID != userID {
 		return echo.NewHTTPError(http.StatusUnauthorized, "User is not the owner of the item")
 	}
@@ -374,6 +378,9 @@ func (h *Handler) EditItem(c echo.Context) error {
 	// validation
 	if file.Size > 1<<20 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	}
+	if file.Size == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
 	}
 	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
@@ -569,21 +576,17 @@ func (h *Handler) GetImage(c echo.Context) error {
 	// TODO: overflow
 	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 32)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "invalid or out of range itemID")
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
 	}
 
-	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
 	data, err := h.ItemRepo.GetItemImage(ctx, int32(itemID))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	// decode content type from
-	// contentType := http.DetectContentType(data)
-
-	// if contentType != "image/jpeg" && contentType != "image/png" {
-	// 	return echo.NewHTTPError(http.StatusInternalServerError, "invalid image type")
-	// }
+	if len(data) == 0 {
+		return echo.NewHTTPError(http.StatusNotFound, "No image data found for this item")
+	}
 
 	return c.Blob(http.StatusOK, "image/jpeg", data)
 }
