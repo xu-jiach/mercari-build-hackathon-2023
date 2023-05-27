@@ -1,5 +1,5 @@
 /* my css */
-#featured-items-img{
+#featured-items-img {
   height: 100vh;
   width: 50vw;
   position: absolute;
@@ -15,16 +15,17 @@
   width: 50%;
 }
 
-#featured-items{
+#featured-items {
   width: 50%;
 }
 
-#sign-in-up-btn, .text-boxes{
+#sign-in-up-btn, .text-boxes {
   display: block;
   -webkit-box-flex: 1;
   padding: 8px;
   width: 300px;
 }
+
 .page-content-container{
   display: flex;
   justify-content: center;
