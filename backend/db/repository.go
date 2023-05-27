@@ -3,7 +3,9 @@ package db
 import (
 	"context"
 	"database/sql"
+	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/domain"
 )
 
@@ -22,11 +24,20 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64, error) {
-	if _, err := r.ExecContext(ctx, "INSERT INTO users (name, password) VALUES (?, ?)", user.Name, user.Password); err != nil {
+	// Start a new transaction
+	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	if err != nil {
 		return 0, err
 	}
-	// TODO: if other insert query is executed at the same time, it might return wrong id
-	// http.StatusConflict(409) 既に同じIDがあった場合
+
+	if _, err := tx.ExecContext(ctx, "INSERT INTO users (name, password) VALUES (?, ?)", user.Name, user.Password); err != nil {
+		tx.Rollback()
+		return 0, echo.NewHTTPError(http.StatusConflict, err)
+	} else {
+		tx.Commit()
+	}
+
+	// Retrieve the ID of the last inserted row
 	row := r.QueryRowContext(ctx, "SELECT id FROM users WHERE rowid = LAST_INSERT_ROWID()")
 
 	var id int64
@@ -69,81 +80,44 @@ func NewItemRepository(db *sql.DB) ItemRepository {
 	return &ItemDBRepository{DB: db}
 }
 
-// Modify the AddItem method to use transaction
 func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domain.Item, error) {
-	// start a new transaction
-	tx, err := r.BeginTx(ctx, nil)
+	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	if err != nil {
 		return domain.Item{}, err
 	}
 
-	// prepare statement
-	stmt, err := tx.PrepareContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)")
-	if err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
-		return domain.Item{}, err
+	if _, err := tx.ExecContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status); err != nil {
+		tx.Rollback()
+		return domain.Item{}, echo.NewHTTPError(http.StatusConflict, err)
+	} else {
+		tx.Commit()
 	}
 
-	// execute query
-	_, err = stmt.ExecContext(ctx, item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status)
-	if err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
-		return domain.Item{}, err
-	}
+	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE rowid = LAST_INSERT_ROWID()")
 
-	// Get the last inserted ID
-	row := tx.QueryRowContext(ctx, "SELECT * FROM items WHERE rowid = LAST_INSERT_ROWID()")
 	var res domain.Item
-	if err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt); err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
-		return domain.Item{}, err
-	}
-
-	// Commit the transaction
-	if err := tx.Commit(); err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
-		return domain.Item{}, err
-	}
-	return res, nil
+	return res, row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
 }
 
 // Create an Edit Method
 func (r *ItemDBRepository) EditItem(ctx context.Context, item domain.Item) (domain.Item, error) {
 	// start a new transaction
-	tx, err := r.BeginTx(ctx, nil)
+	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	if err != nil {
 		return domain.Item{}, err
 	}
 
-	// prepare statement
-	stmt, err := tx.PrepareContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, image = ?, status = ? WHERE id = ?")
+	if _, err := r.ExecContext(ctx, "UPDATE items SET name = ?, price = ?, description = ?, category_id = ?, image = ?, status = ? WHERE id = ?", item.Name, item.Price, item.Description, item.CategoryID, item.Image, item.Status, item.ID); err != nil {
+		tx.Rollback()
+		return domain.Item{}, echo.NewHTTPError(http.StatusConflict, err)
+	}
+
+	err = tx.Commit()
 	if err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
 		return domain.Item{}, err
 	}
 
-	// execute query
-	_, err = stmt.ExecContext(ctx, item.Name, item.Price, item.Description, item.CategoryID, item.Image, item.Status, item.ID)
-	if err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
-		return domain.Item{}, err
-	}
-
-	// Get the updated item
-	row := tx.QueryRowContext(ctx, "SELECT * FROM items WHERE id = ?", item.ID)
-	var res domain.Item
-	if err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt); err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
-		return domain.Item{}, err
-	}
-
-	// Commit the transaction
-	if err := tx.Commit(); err != nil {
-		tx.Rollback() // Rollback the transaction if there is any error
-		return domain.Item{}, err
-	}
-
-	return res, nil
+	return item, nil
 }
 
 func (r *ItemDBRepository) GetItem(ctx context.Context, id int32) (domain.Item, error) {

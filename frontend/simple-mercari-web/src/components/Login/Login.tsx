@@ -25,6 +25,7 @@ export const Login = () => {
         password: password,
       }),
     })
+
       .then((user) => {
         toast.success("Signed in!");
         console.log("POST success:", user.id);
@@ -33,9 +34,10 @@ export const Login = () => {
         navigate("/");
       })
       .catch((err) => {
-        console.log(`POST error:`, err);
-        toast.error(err.message);
+        console.log(`POST error:`, err.status);
+        toast.error("Error: " + err.status + " User id or Password incorrect");
       });
+
   };
 
   return (
@@ -65,7 +67,7 @@ export const Login = () => {
   );
 };
 
-// old code, pre-redesign 
+// old code, pre-redesign
 // return (
 //   <div>
 //     <div className="Login">

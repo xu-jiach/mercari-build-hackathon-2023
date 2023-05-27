@@ -34,7 +34,7 @@ export const Signup = () => {
       })
       .catch((err) => {
         console.log(`POST error:`, err);
-        toast.error(err.message);
+        toast.error("Error: " + err.status + " Failed to create new account");
       });
   };
 
