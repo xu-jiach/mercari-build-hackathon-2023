@@ -581,9 +581,9 @@ func (h *Handler) GetImage(c echo.Context) error {
 	// decode content type from
 	contentType := http.DetectContentType(data)
 
-	if contentType != "image/jpeg" && contentType != "image/png" {
-		return echo.NewHTTPError(http.StatusInternalServerError, "invalid image type")
-	}
+	// if contentType != "image/jpeg" && contentType != "image/png" {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, "invalid image type")
+	// }
 
 	return c.Blob(http.StatusOK, contentType, data)
 }
