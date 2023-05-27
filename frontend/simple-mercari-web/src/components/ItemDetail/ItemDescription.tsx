@@ -38,9 +38,9 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
             <Chip label={item.category_name} component="a" /> {/* TODO: Navigate to category view on clicking */}
 
             {item.status == ItemStatus.ItemStatusSoldOut ? (
-                <button disabled={true} onClick={onSubmit} id="MerDisableButton">
+                <Button disabled={true} onClick={onSubmit} id="MerDisableButton">
                     SoldOut
-                </button>
+                </Button>
             ) : (
                 <>
                     {isOwner && (
