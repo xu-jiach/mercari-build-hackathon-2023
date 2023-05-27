@@ -82,7 +82,7 @@ func NewItemRepository(db *sql.DB) ItemRepository {
 
 // Modify the AddItem method to use transaction
 func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domain.Item, error) {
-	tx, err := r.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	if err != nil {
 		return domain.Item{}, err
 	}
