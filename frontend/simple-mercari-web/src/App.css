@@ -1,15 +1,17 @@
 /* my css */
-
 #featured-items-img{
-  height: 100vh;
   height: 100vh;
   width: 50vw;
   position: absolute;
   top: 0;
   right: 0;
 }
+/* .sign-in-up-page{
+  max-height: fit-content;
+}
 
-#accountForm {
+
+#account-form {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -18,6 +20,23 @@
   position: absolute;
   top: 10;
   left: 0;
+} */
+
+.sign-in-up-page{
+  display: flex;
+  height: 100vh; /* This will make it take up the full viewport height */
+}
+
+#account-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+}
+
+#featured-items{
+  width: 50%; /* This will make it take up the other half of the page */
 }
 
 #sign-in-up-btn, .text-boxes{

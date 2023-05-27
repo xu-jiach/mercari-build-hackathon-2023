@@ -32,7 +32,7 @@ export const UserProfile: React.FC = () => {
       .then((items) => setItems(items))
       .catch((err) => {
         console.log(`GET error:`, err);
-        toast.error(err.message);
+        toast.error("Error: " + err.status);
       });
   };
 
@@ -50,7 +50,7 @@ export const UserProfile: React.FC = () => {
       })
       .catch((err) => {
         console.log(`GET error:`, err);
-        toast.error(err.message);
+        toast.error("Error: " + err.status);
       });
   };
 
@@ -74,7 +74,7 @@ export const UserProfile: React.FC = () => {
       .then((_) => window.location.reload())
       .catch((err) => {
         console.log(`POST error:`, err);
-        toast.error(err.message);
+        toast.error("Error: " + err.status);
       });
   };
 
