@@ -30,7 +30,10 @@
   display: flex;
   justify-content: center;
 }
-
+.Listing .listing-form {
+  display: flex;
+  flex-direction: column;
+}
 /* default values */
 
 /* .MerComponent {
