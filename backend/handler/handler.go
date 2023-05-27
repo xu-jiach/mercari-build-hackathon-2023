@@ -254,21 +254,21 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if file.Size > 1<<20 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
 	}
-	if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
-		return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
-	}
-	if req.Price <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
-	}
-	if req.Name == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
-	}
-	if req.CategoryID <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
-	}
-	if req.Description == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
-	}
+	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
+	// }
+	// if req.Price <= 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	// }
+	// if req.Name == "" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
+	// }
+	// if req.CategoryID <= 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
+	// }
+	// if req.Description == "" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
+	// }
 	// end of validation
 
 	src, err := file.Open()
@@ -348,18 +348,18 @@ func (h *Handler) EditItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	// validation
-	if req.Price <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
-	}
-	if req.Name == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
-	}
-	if req.CategoryID <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
-	}
-	if req.Description == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
-	}
+	// if req.Price <= 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	// }
+	// if req.Name == "" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
+	// }
+	// if req.CategoryID <= 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
+	// }
+	// if req.Description == "" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
+	// }
 	// end of validation
 
 	src, err := file.Open()
@@ -375,9 +375,9 @@ func (h *Handler) EditItem(c echo.Context) error {
 	if file.Size > 1<<20 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
 	}
-	if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
-		return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
-	}
+	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
+	// }
 	// Check if the category exists
 	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
 	if err != nil {
@@ -579,13 +579,13 @@ func (h *Handler) GetImage(c echo.Context) error {
 	}
 
 	// decode content type from
-	contentType := http.DetectContentType(data)
+	// contentType := http.DetectContentType(data)
 
-	if contentType != "image/jpeg" && contentType != "image/png" {
-		return echo.NewHTTPError(http.StatusInternalServerError, "invalid image type")
-	}
+	// if contentType != "image/jpeg" && contentType != "image/png" {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, "invalid image type")
+	// }
 
-	return c.Blob(http.StatusOK, contentType, data)
+	return c.Blob(http.StatusOK, "image/jpeg", data)
 }
 
 func (h *Handler) AddBalance(c echo.Context) error {
