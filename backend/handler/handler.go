@@ -327,10 +327,8 @@ func (h *Handler) EditItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
 	}
-	if err := c.Bind(req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
 
+	// getUserID
 	userID, err := getUserID(c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
@@ -369,6 +367,9 @@ func (h *Handler) EditItem(c echo.Context) error {
 	// validation
 	if file.Size > 1<<20 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	}
+	if file.Size == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
 	}
 
 	src, err := file.Open()
