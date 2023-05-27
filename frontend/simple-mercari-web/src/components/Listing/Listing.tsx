@@ -1,5 +1,5 @@
 import React, { useEffect, useState, ReactNode, ChangeEvent}  from "react";
-import {useParams} from "react-router-dom";
+import {useParams, useNavigate} from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
 import { toast } from "react-toastify";
@@ -41,6 +41,7 @@ export const Listing: React.FC = () => {
   const { itemId } = useParams<{ itemId: string }>();
   const [fileName, setFileName] = useState("");
   const isEditing = itemId !== undefined;
+  const navigate = useNavigate();
 
 
   const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,6 +197,7 @@ export const Listing: React.FC = () => {
         if (!isEditing) {
           toast.success("Item added successfully!");
         }
+        navigate('/'); // Redirect to homepage
       })
       .catch((error: Error) => {
         toast.error(error.message);
