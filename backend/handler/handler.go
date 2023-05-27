@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -86,6 +87,18 @@ type addItemRequest struct {
 }
 
 type addItemResponse struct {
+	ID int64 `json:"id"`
+}
+
+type editItemRequest struct {
+	ID          int32  `form:"id"`
+	Name        string `form:"name"`
+	CategoryID  int64  `form:"category_id"`
+	Price       int64  `form:"price"`
+	Description string `form:"description"`
+}
+
+type editItemResponse struct {
 	ID int64 `json:"id"`
 }
 
@@ -297,15 +310,99 @@ func (h *Handler) AddItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
 }
 
-// func (h *Handler) EditItem(c echo.Context) error {
-// 	ctx := c.Request().Context()
+func (h *Handler) EditItem(c echo.Context) error {
+	ctx := c.Request().Context()
 
-// 	req := new(editItemRequest)
-// 	if err := c.Bind(req); err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, err)
-// 	}
+	req := new(editItemRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 
-// 	itemID, err := strconv.
+	itemIdParam := c.Param("itemID")
+	log.Println("itemIdParam:", itemIdParam)
+	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
+	}
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
+
+	req.ID = int32(itemId)
+	// Check if the user is the owner of the item
+	existingItem, err := h.ItemRepo.GetItem(ctx, req.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	if existingItem.UserID != userID {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User is not the owner of the item")
+	}
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	// validation
+	if req.Price <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	}
+	if req.Name == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
+	}
+	if req.CategoryID <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
+	}
+	if req.Description == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
+	}
+	// end of validation
+
+	src, err := file.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer src.Close()
+
+	var dest []byte
+	blob := bytes.NewBuffer(dest)
+
+	// validation
+	if file.Size > 1<<20 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	}
+	if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
+		return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
+	}
+	// Check if the category exists
+	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusBadRequest, "Category does not exist")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	item, err := h.ItemRepo.EditItem(c.Request().Context(), domain.Item{
+		ID:          req.ID,
+		Name:        req.Name,
+		CategoryID:  req.CategoryID,
+		UserID:      userID,
+		Price:       req.Price,
+		Description: req.Description,
+		Image:       blob.Bytes(),
+		Status:      domain.ItemStatusInitial,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, editItemResponse{ID: int64(item.ID)})
+}
 
 func (h *Handler) Sell(c echo.Context) error {
 	ctx := c.Request().Context()
