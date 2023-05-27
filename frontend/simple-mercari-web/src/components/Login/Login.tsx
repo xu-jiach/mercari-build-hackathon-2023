@@ -66,35 +66,3 @@ export const Login = () => {
     </div>
   );
 };
-
-// old code, pre-redesign
-// return (
-//   <div>
-//     <div className="Login">
-//       <label id="MerInputLabel">User ID</label>
-//       <input
-//         type="number"
-//         name="userID"
-//         id="MerTextInput"
-//         placeholder="UserID"
-//         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-//           setUserID(Number(e.target.value));
-//         }}
-//         required
-//       />
-//       <label id="MerInputLabel">Password</label>
-//       <input
-//         type="password"
-//         name="password"
-//         id="MerTextInput"
-//         placeholder="password"
-//         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-//           setPassword(e.target.value);
-//         }}
-//       />
-//       <button onClick={onSubmit} id="MerButton">
-//         Login
-//       </button>
-//     </div>
-//   </div>
-// );

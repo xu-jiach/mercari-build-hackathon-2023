@@ -74,12 +74,12 @@ export const Listing: React.FC = () => {
     data.append("price", values.price.toString());
     data.append("description", values.description);
     data.append("image", values.image);
-  
+
     // If category_id is 0, add newCategory to the FormData
     if (values.category_id === 0) {
       data.append("category_name", newCategory);
     }
-  
+
     if (isEditing) {
       // Send a PUT request to update the existing item
       fetcher(`/items/${itemId}`, {
@@ -91,7 +91,7 @@ export const Listing: React.FC = () => {
       })
         .then(() => {
           toast.success("Item updated successfully!");
-        })     
+        })
         .catch((error: Error) => {
           toast.error(error.message);
           console.error("PUT error:", error);
@@ -127,7 +127,7 @@ export const Listing: React.FC = () => {
           const matchingCategory = categories.find(
             (category) => category.id === item.category_id
           );
-  
+
           setValues((prevValues) => ({
             ...prevValues,
             name: item.name,
@@ -166,29 +166,24 @@ export const Listing: React.FC = () => {
         console.error("POST error:", error);
       });
 
-  const fetchCategories = () => {
-    fetcher<Category[]>(`/items/categories`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    })
-      .then((items) => setCategories(items))
-      .catch((err) => {
-        console.log(`GET error:`, err);
-        toast.error("Error: " + err.status);
-      });
-  };
-  
+      const fetchCategories = () => {
+        fetcher<Category[]>(`/items/categories`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        })
+          .then((items) => setCategories(items))
+          .catch((err) => {
+            console.log(`GET error:`, err);
+            toast.error(err.message);
+          });
+      };
 
-  useEffect(() => {
-    fetchCategories().then(() => {
-        if (isEditing) {
-            fetchItemDetails(); 
-        }
-    });
-}, []);
+      useEffect(() => {
+        fetchCategories();
+      }, []);
 
 
   // Effect that runs whenever the new category name changes
@@ -197,7 +192,7 @@ export const Listing: React.FC = () => {
       // avoid discrepanies between lowercase and uppercase
       (category) => category.name.toLowerCase() === newCategory.toLowerCase()
     );
-  
+
     if (matchingCategory) {
       setValues({
         ...values,
@@ -211,7 +206,7 @@ export const Listing: React.FC = () => {
   }, [newCategory, categories]);
 
 
-  
+
 
   return (
   <MerComponent>
