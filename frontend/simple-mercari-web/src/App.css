@@ -30,6 +30,12 @@
   justify-content: center;
 }
 
+.page-content-container{
+  /* display: flex;
+  flex-direction: column;
+  justify-content: center; */
+}
+
 /* default values */
 
 /* .MerComponent {

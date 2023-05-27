@@ -4,6 +4,7 @@ import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
+import Button from '@mui/material/Button';
 
 interface Category {
   id: number;
@@ -257,7 +258,7 @@ export const Listing: React.FC = () => {
               }
             }}
           />
-          <label htmlFor="newCategoryCheckbox">I didn't find my category</label>
+          <label htmlFor="newCategoryCheckbox">Create a new category</label>
           <input
             type="text"
             name="newCategory"
@@ -291,9 +292,9 @@ export const Listing: React.FC = () => {
             onChange={onFileChange}
             required
           />
-          <button type="submit" id="MerButton">
-            List this item
-          </button>
+          <Button variant="contained" type="submit" color="primary" sx={{ mt: 3}}>
+            List
+          </Button>
         </div>
       </form>
     </div>
