@@ -583,12 +583,18 @@ func (h *Handler) GetImage(c echo.Context) error {
 	if itemID < math.MinInt32 || itemID > math.MaxInt32 {
 		return echo.NewHTTPError(http.StatusBadRequest, "ItemID out of range")
 	}
+
 	data, err := h.ItemRepo.GetItemImage(ctx, int32(itemID))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound, "Image not found")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.Blob(http.StatusOK, "image/jpeg", data)
+	contentType := http.DetectContentType(data)
+
+	return c.Blob(http.StatusOK, contentType, data)
 }
 
 func (h *Handler) AddBalance(c echo.Context) error {
