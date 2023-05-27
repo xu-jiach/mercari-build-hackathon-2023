@@ -1,18 +1,16 @@
 .item-container {
     width: 100%;
     max-width: 80%;
-    border-radius: 5px;
     overflow: hidden;
     margin: 50px auto;
     display: flex;
-    flex-direction: column;
 }
 
 .item-list {
     margin: 0 auto;
     display: flex;
     flex-wrap: wrap;
-    justify-content: start;
+    justify-content: space-between;
 }
 
 @media screen and (max-width: 1000px) {
