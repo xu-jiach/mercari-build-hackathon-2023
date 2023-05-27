@@ -576,18 +576,25 @@ func (h *Handler) GetImage(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	// TODO: overflow
-	itemID, err := strconv.Atoi(c.Param("itemID"))
+	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 32)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "invalid itemID type")
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
+	}
+	if itemID < math.MinInt32 || itemID > math.MaxInt32 {
+		return echo.NewHTTPError(http.StatusBadRequest, "ItemID out of range")
 	}
 
-	// オーバーフローしていると。ここのint32(itemID)がバグって正常に処理ができないはず
 	data, err := h.ItemRepo.GetItemImage(ctx, int32(itemID))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound, "Image not found")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.Blob(http.StatusOK, "image/jpeg", data)
+	contentType := http.DetectContentType(data)
+
+	return c.Blob(http.StatusOK, contentType, data)
 }
 
 func (h *Handler) AddBalance(c echo.Context) error {
