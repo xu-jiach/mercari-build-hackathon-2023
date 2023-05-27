@@ -34,7 +34,7 @@ export const Home = () => {
       })
       .catch((err) => {
         console.log(`GET error:`, err);
-        toast.error(err.message);
+        toast.error("Error: " + err.status);
       });
   };
 

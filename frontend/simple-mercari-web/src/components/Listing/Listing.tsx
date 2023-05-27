@@ -166,19 +166,19 @@ export const Listing: React.FC = () => {
         console.error("POST error:", error);
       });
 
-    const fetchCategories = () => {
-      return fetcher<Category[]>(`/items/categories`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-        .then((items) => setCategories(items))
-        .catch((err) => {
-          console.log(`GET error:`, err);
-          toast.error(err.message);
-        });
+  const fetchCategories = () => {
+    fetcher<Category[]>(`/items/categories`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    })
+      .then((items) => setCategories(items))
+      .catch((err) => {
+        console.log(`GET error:`, err);
+        toast.error("Error: " + err.status);
+      });
   };
   
 
