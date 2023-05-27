@@ -67,6 +67,7 @@ type ItemRepository interface {
 	GetOnSaleItems(ctx context.Context) ([]domain.Item, error)
 	GetItemsByUserID(ctx context.Context, userID int64) ([]domain.Item, error)
 	GetCategory(ctx context.Context, id int64) (domain.Category, error)
+	GetCategoryByName(ctx context.Context, name string) (domain.Category, error)
 	GetCategories(ctx context.Context) ([]domain.Category, error)
 	GetItemByKeyword(ctx context.Context, keyword string) ([]domain.Item, error)
 	UpdateItemStatus(ctx context.Context, id int32, status domain.ItemStatus) error
@@ -241,4 +242,11 @@ func (r *ItemDBRepository) GetItemByKeyword(ctx context.Context, keyword string)
 		return nil, err
 	}
 	return items, nil
+}
+
+func (r *ItemDBRepository) GetCategoryByName(ctx context.Context, name string) (domain.Category, error) {
+	row := r.QueryRowContext(ctx, "SELECT * FROM category WHERE name = ?", name)
+
+	var cat domain.Category
+	return cat, row.Scan(&cat.ID, &cat.Name)
 }
