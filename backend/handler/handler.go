@@ -581,6 +581,9 @@ func (h *Handler) GetImage(c echo.Context) error {
 
 	data, err := h.ItemRepo.GetItemImage(ctx, int32(itemID))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound, "No image data found for this item")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
