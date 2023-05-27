@@ -121,6 +121,15 @@ type loginResponse struct {
 	Token string `json:"token"`
 }
 
+type addCategoryRequest struct {
+	Name string `json:"name"`
+}
+
+type addCategoryResponse struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
 type Handler struct {
 	DB       *sql.DB
 	UserRepo db.UserRepository
@@ -794,43 +803,33 @@ func getEnv(key string, defaultValue string) string {
 	return value
 }
 
-// func (h *Handler) CreateCategory(ctx context.Context, categoryName string) (domain.Category, error) {
-// 	// Validate the category name
-// 	if !isValidCategoryName(categoryName) {
-// 		return domain.Category{}, fmt.Errorf("Invalid category name")
-// 	}
+// AddCategory API
+func (h *Handler) AddCategory(c echo.Context) error {
+	ctx := c.Request().Context()
 
-// 	// Check if the category already exists in the database
-// 	_, err := h.ItemRepo.GetCategory(ctx, categoryName)
-// 	if err != nil {
-// 		if err != sql.ErrNoRows {
-// 			return domain.Category{}, err
-// 		}
+	req := new(addCategoryRequest) // Define your request struct for adding category
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 
-// 		// If the category doesn't exist, proceed with creating it
-// 		category, err := h.ItemRepo.AddCategory(ctx, domain.Category{
-// 			Name: categoryName,
-// 		})
-// 		if err != nil {
-// 			return domain.Category{}, err
-// 		}
+	// Check if category already exists
+	_, err := h.ItemRepo.GetCategoryByName(ctx, req.Name)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusInternalServerError, err)
+		}
+	} else {
+		// Category already exists
+		return echo.NewHTTPError(http.StatusBadRequest, "Category already exists")
+	}
 
-// 		// Successfully created the category
-// 		return category, nil
-// 	}
-// 	return domain.Category{}, fmt.Errorf("Category already exists")
-// }
+	// If category does not exist, proceed to create it
+	category, err := h.ItemRepo.AddCategory(ctx, domain.Category{
+		Name: req.Name,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-// a function check whether the name is valid or not. Name must not be zero
-// func isValidName(name string) bool {
-// 	return len(name) == 0
-// }
-
-// // a function check whether the password is valid or not. Password must 6-20 characters.
-// func isValidPassword(password string) bool {
-// 	return len()
-// }
-
-// func isValidCategoryName(categoryName string) bool {
-// 	return regexp.MustCompile(`^[a-zA-Z]{1,30}$`).MatchString(categoryName)
-// }
+	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
+}

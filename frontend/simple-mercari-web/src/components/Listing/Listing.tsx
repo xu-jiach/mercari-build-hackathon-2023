@@ -66,19 +66,49 @@ export const Listing: React.FC = () => {
     setNewCategory(event.target.value);
   };
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  // call the addcategory function when the checkbox is checked
+  const addCategory = async () => {
+    try {
+      const response = await fetcher(`/categories`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cookies.token}`,
+        },
+        body: JSON.stringify({
+          name: newCategory,
+        }),
+      });
+      toast.success("New category created successfully!");
+      return response.id;
+    } catch (error: any) {
+      toast.error(error.message);
+      console.error("POST error:", error);
+      return null;
+    }
+  };
+
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData();
     data.append("name", values.name);
-    data.append("category_id", values.category_id.toString());
     data.append("price", values.price.toString());
     data.append("description", values.description);
     data.append("image", values.image);
 
-    // If category_id is 0, add newCategory to the FormData
+  // If category_id is 0, create a new category and get its id
     if (values.category_id === 0) {
-      data.append("category_name", newCategory);
+      const categoryId = await addCategory();
+    if (!categoryId) {
+      toast.error("Failed to create new category. Please try again.");
+      return;
     }
+    data.append("category_id", categoryId.toString());
+  } else {
+    data.append("category_id", values.category_id.toString());
+  }
 
     if (isEditing) {
       // Send a PUT request to update the existing item
@@ -144,8 +174,6 @@ export const Listing: React.FC = () => {
     }
   };
 
-
-
   const sell = (itemID: number) =>
     fetcher(`/sell`, {
       method: "POST",
@@ -183,8 +211,8 @@ export const Listing: React.FC = () => {
 
       useEffect(() => {
         fetchCategories();
+        fetchItemDetails();
       }, []);
-
 
   // Effect that runs whenever the new category name changes
   useEffect(() => {
