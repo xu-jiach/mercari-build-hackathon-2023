@@ -70,7 +70,7 @@ Sample code for calling some endpoints after running server
 $ curl -X POST 'http://127.0.0.1:9000/register' -d '{"name": "momom", "password": "password"}'  -H 'Content-Type: application/json'
 # Login (get login token)
 # {"id":11,"name":"momom","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMSwiZXhwIjoxNjg0NTgxNjU3fQ.7YGvgOsKI1EIr8a9yw0Ny6GRmmUJjrAkjjypdpj74qw"}
-$ curl -i -X POST 'http://127.0.0.1:9000/login' -d '{"user_id": 1, "password": "password"}'  -H 'Content-Type: application/json'
+$ curl -i -X POST 'http://127.0.0.1:9000/login' -d '{"user_id": 11, "password": "password"}'  -H 'Content-Type: application/json'
 # Add item
 # Please put image.jpg on backend folder to call this endpoint 
 # {"id":21}
