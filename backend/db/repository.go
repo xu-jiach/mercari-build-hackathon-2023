@@ -86,31 +86,17 @@ func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domai
 		return domain.Item{}, err
 	}
 
-	// use defer to ensure that the transaction is always properly terminated
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-
-	result, err := tx.ExecContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status)
-	if err != nil {
-		return domain.Item{}, err
+	if _, err := tx.ExecContext(ctx, "INSERT INTO items (name, price, description, category_id, seller_id, image, status) VALUES (?, ?, ?, ?, ?, ?, ?)", item.Name, item.Price, item.Description, item.CategoryID, item.UserID, item.Image, item.Status); err != nil {
+		tx.Rollback()
+		return domain.Item{}, echo.NewHTTPError(http.StatusConflict, err)
+	} else {
+		tx.Commit()
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return domain.Item{}, err
-	}
-
-	row := tx.QueryRowContext(ctx, "SELECT * FROM items WHERE id = ?", id)
+	row := r.QueryRowContext(ctx, "SELECT * FROM items WHERE rowid = LAST_INSERT_ROWID()")
 
 	var res domain.Item
-	err = row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
-
-	return res, err
+	return res, row.Scan(&res.ID, &res.Name, &res.Price, &res.Description, &res.CategoryID, &res.UserID, &res.Image, &res.Status, &res.CreatedAt, &res.UpdatedAt)
 }
 
 // Create an Edit Method
