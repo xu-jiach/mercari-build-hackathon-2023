@@ -567,7 +567,7 @@ func (h *Handler) GetImage(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	// TODO: overflow
-	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
+	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 32)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "invalid or out of range itemID")
 	}
@@ -578,7 +578,13 @@ func (h *Handler) GetImage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// check if not jpeg, return error
+	// decode content type from
+	// contentType := http.DetectContentType(data)
+
+	// if contentType != "image/jpeg" && contentType != "image/png" {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, "invalid image type")
+	// }
+
 	return c.Blob(http.StatusOK, "image/jpeg", data)
 }
 
