@@ -241,9 +241,9 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if file.Size > 1<<20 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
 	}
-	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
-	// }
+	if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
+		return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
+	}
 	if req.Price <= 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
 	}
@@ -297,10 +297,15 @@ func (h *Handler) AddItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
 }
 
-// func (h *Handler) EditItem(c echo.Context) error {
-// 	ctx := c.Request().Context()
+func (h *Handler) EditItem(c echo.Context) error {
+	ctx := c.Request().Context()
 
-// 	req := new(editItemRequest)
+	req := new(editItemRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	itemID, err := strconv.
 
 func (h *Handler) Sell(c echo.Context) error {
 	ctx := c.Request().Context()
