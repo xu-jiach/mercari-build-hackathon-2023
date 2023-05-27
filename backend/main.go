@@ -85,12 +85,15 @@ func run(ctx context.Context) int {
 	e.GET("/items/categories", h.GetCategories)
 	e.POST("/register", h.Register)
 	e.POST("/login", h.Login)
+	// add the search endpoint GET /search?name=<search word>
+	e.GET("/search", h.SearchItemByKeyword)
 
 	// Login required
 	l := e.Group("")
 	l.Use(echojwt.WithConfig(config))
 	l.GET("/users/:userID/items", h.GetUserItems)
 	l.POST("/items", h.AddItem)
+	// l.PUT("/items/:itemID", h.EditItem)
 	l.POST("/sell", h.Sell)
 	l.POST("/purchase/:itemID", h.Purchase)
 	l.GET("/balance", h.GetBalance)

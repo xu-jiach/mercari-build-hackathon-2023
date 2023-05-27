@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS items
 CREATE TABLE IF NOT EXISTS users
 (
     id       integer primary key autoincrement,
-    name     varchar(50) unique,
+    name     varchar(50),
     password binary(60),
     balance  integer default 0
 );
