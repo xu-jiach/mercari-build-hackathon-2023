@@ -1,36 +1,20 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
 import { toast } from "react-toastify";
 import { fetcher, fetcherBlob } from "../../helper";
-
-const ItemStatus = {
-  ItemStatusInitial: 1,
-  ItemStatusOnSale: 2,
-  ItemStatusSoldOut: 3,
-} as const;
-
-type ItemStatus = (typeof ItemStatus)[keyof typeof ItemStatus];
-
-interface Item {
-  id: number;
-  name: string;
-  category_id: number;
-  category_name: string;
-  user_id: number;
-  price: number;
-  status: ItemStatus;
-  description: string;
-}
+import { ItemImage } from "./ItemImage";
+import "./itemDetail.css";
+import { Item } from "../../common/interfaces";
+import { ItemDescription } from "./ItemDescription";
 
 export const ItemDetail = () => {
-  const navigate = useNavigate();
-  const params = useParams();
-  const [item, setItem] = useState<Item>();
-  const [itemImage, setItemImage] = useState<Blob>();
-  const [cookies] = useCookies(["token", "userID"]);
-  const [isOwner, setIsOwner] = useState(false);
+    const [item, setItem] = useState<Item>();
+    const [itemImage, setItemImage] = useState<Blob>();
+    const [cookies] = useCookies(["token", "userID"]);
+    const [isOwner, setIsOwner] = useState(false);
+    const params = useParams();
 
   const fetchItem = () => {
     fetcher<Item>(`/items/${params.id}`, {
@@ -40,16 +24,16 @@ export const ItemDetail = () => {
         "Content-Type": "application/json",
       },
     })
-      .then((res) => {
+        .then((res) => {
           console.log("GET success:", res);
           setItem(res);
           setIsOwner(res.user_id === Number(cookies.userID)); // Set isOwner state here
-      })
+        })
 
-      .catch((err) => {
-        console.log(`GET error:`, err);
-        toast.error("Error: " + err.status);
-      });
+        .catch((err) => {
+          console.log(`GET error:`, err);
+          toast.error("Error: " + err.status);
+        });
 
     fetcherBlob(`/items/${params.id}/image`, {
       method: "GET",
@@ -58,33 +42,14 @@ export const ItemDetail = () => {
         "Content-Type": "application/json",
       },
     })
-      .then((res) => {
-        console.log("GET success:", res);
-        setItemImage(res);
-      })
-      .catch((err) => {
-        console.log(`GET error:`, err);
-        toast.error("Error: " + err.status);
-      });
-  };
-
-  const onSubmit = (_: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    fetcher<Item[]>(`/purchase/${params.id}`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${cookies.token}`,
-      },
-      body: JSON.stringify({
-        user_id: Number(cookies.userID),
-      }),
-    })
-      .then((_) => window.location.reload())
-      .catch((err) => {
-        console.log(`POST error:`, err);
-        toast.error("Error: " + err.status);
-      });
+        .then((res) => {
+          console.log("GET success:", res);
+          setItemImage(res);
+        })
+        .catch((err) => {
+          console.log(`GET error:`, err);
+          toast.error("Error: " + err.status);
+        });
   };
 
   useEffect(() => {
@@ -92,50 +57,13 @@ export const ItemDetail = () => {
   }, []);
 
   return (
-    <div className="ItemDetail">
       <MerComponent condition={() => item !== undefined}>
         {item && itemImage && (
-          <div>
-            <img
-              height={480}
-              width={480}
-              src={URL.createObjectURL(itemImage)}
-              alt="item"
-              onClick={() => navigate(`/item/${item.id}`)}
-            />
-            <p>
-              <span>Item Name: {item.name}</span>
-              <br />
-              <span>Price: {item.price}</span>
-              <br />
-              <span>UserID: {item.user_id}</span>
-              <br />
-              <span>Category: {item.category_name}</span>
-              <br />
-              <span>Description: {item.description}</span>
-            </p>
-              {item.status == ItemStatus.ItemStatusSoldOut ? (
-              <button disabled={true} onClick={onSubmit} id="MerDisableButton">
-                SoldOut
-              </button>
-            ) : (
-              <>
-                {isOwner && (
-                  <button
-                    onClick={() => navigate(`/edit-item/${item.id}`)} // Navigate to /edit-item/:itemId when the Edit button is clicked
-                    id="MerButton"
-                  >
-                    Edit
-                  </button>
-                )}
-                <button onClick={onSubmit} id="MerButton">
-                  Purchase
-                  </button>
-              </>
-            )}
-          </div>
+            <div className="item-detail-container">
+                <ItemImage itemImage={itemImage} />
+                <ItemDescription item={item} isOwner={isOwner}/>
+            </div>
         )}
       </MerComponent>
-    </div>
   );
 };

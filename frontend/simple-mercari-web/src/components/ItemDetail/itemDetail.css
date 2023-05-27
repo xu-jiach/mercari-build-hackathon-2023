@@ -1,0 +1,44 @@
+.image-container {
+    border-radius: 10px;
+    margin: 10px;
+}
+
+.description-container {
+    margin: 50px;
+}
+
+#buy-now-btn {
+    display: block;
+    width: 100%;
+}
+
+#yen-symbol {
+    font-size: 20px;
+}
+
+.item-detail-container {
+    max-width: 1000px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 50px;
+}
+
+@media screen and (max-width: 1000px) {
+    .item-detail-container {
+        flex-direction: column;
+        max-width: 400px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .item-detail-container {
+        margin: 10px;
+    }
+
+    .item-image {
+        width: 250px;
+        height: 250px;
+    }
+}
