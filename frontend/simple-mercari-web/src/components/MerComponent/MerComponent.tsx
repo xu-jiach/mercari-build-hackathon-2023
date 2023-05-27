@@ -3,6 +3,7 @@ import { useCookies } from "react-cookie";
 import { Footer } from "../Footer";
 import { NotFound } from "../NotFound";
 
+
 interface Prop {
   condition?: () => boolean;
   children: ReactNode;
@@ -19,9 +20,12 @@ export const MerComponent: React.FC<Prop> = (props) => {
     return <NotFound />;
   }
   return (
-    <>
-      {props.children}
+    <div className="app-container">
+      <div className="page-content-container">
+        {props.children}
+      </div>
+
       <Footer />
-    </>
+    </div>
   );
 };
