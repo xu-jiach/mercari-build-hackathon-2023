@@ -1,3 +1,5 @@
+// TODO: change password requirment if have time
+
 package handler
 
 import (
@@ -8,14 +10,9 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"time"
 
-	// newly added
-	"github.com/go-playground/validator/v10"
-
-	// new added one ended here
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -38,9 +35,8 @@ type InitializeResponse struct {
 }
 
 type registerRequest struct {
-	// name and password are set be aplhanumeric only
-	Name     string `json:"name" validate:"required,min=4,max=20,alphanum"`
-	Password string `json:"password" validate:"required,min=6,max=20,password"`
+	Name     string `json:"name"`
+	Password string `json:"password"`
 }
 
 type registerResponse struct {
@@ -79,15 +75,14 @@ type getCategoriesResponse struct {
 }
 
 type sellRequest struct {
-	UserID int64 `json:"user_id"`
 	ItemID int32 `json:"item_id"`
 }
 
 type addItemRequest struct {
-	Name        string `form:"name" validate:"required,min=1,max=35"`
-	CategoryID  int64  `form:"category_id" validate:"required,number"`
-	Price       int64  `form:"price" validate:"required,number,gte=0,lte=99999999"`
-	Description string `form:"description" validate:"required,min=1,max=2555"`
+	Name        string `form:"name"`
+	CategoryID  int64  `form:"category_id"`
+	Price       int64  `form:"price"`
+	Description string `form:"description"`
 }
 
 type addItemResponse struct {
@@ -95,7 +90,7 @@ type addItemResponse struct {
 }
 
 type addBalanceRequest struct {
-	Balance int64 `json:"balance" validate:"number,get=0"`
+	Balance int64 `json:"balance"`
 }
 
 type getBalanceResponse struct {
@@ -103,8 +98,8 @@ type getBalanceResponse struct {
 }
 
 type loginRequest struct {
-	UserID   int64  `json:"user_id" validate:"required,number"`
-	Password string `json:"password" validate:"required"`
+	UserID   int64  `json:"user_id"`
+	Password string `json:"password"`
 }
 
 type loginResponse struct {
@@ -145,38 +140,21 @@ func (h *Handler) AccessLog(c echo.Context) error {
 }
 
 func (h *Handler) Register(c echo.Context) error {
-	// TODO: validation -- done
+	// TODO: validation
 	// http.StatusBadRequest(400)
 	req := new(registerRequest)
 	if err := c.Bind(req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	// Validation
-	validate := validator.New()
-
-	// validate the password
-	if err := validate.RegisterValidation("password", passwordValidator); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+	//	Validation
+	// Pending to change back to the original approach if have time
+	if len(req.Name) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "name is invalid")
 	}
-
-	// Validate the name
-	if err := validate.Struct(req); err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-
-		// Initialize an empty slice for error messages
-		ErrMsgs := make([]string, len(validationErrors))
-
-		// Loop through the validation errors, mapping each to a user-friendly message
-		for i, e := range validationErrors {
-			ErrMsgs[i] = mapErrorMessage(e)
-		}
-
-		// Return an HTTP error messages
-		return echo.NewHTTPError(http.StatusBadRequest, ErrMsgs)
+	if len(req.Password) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "password is invalid")
 	}
-
-	// end of validation
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -200,32 +178,14 @@ func (h *Handler) Login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	// Validation -- want to change the validation instead of calling the external function
-
-	validate := validator.New()
-	if err := validate.Struct(req); err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-
-		// Initialize an empty slice for error messages
-		ErrMsgs := make([]string, len(validationErrors))
-
-		// Loop through the validation errors, mapping each to a user-friendly message
-		for i, e := range validationErrors {
-			ErrMsgs[i] = mapErrorMessage(e)
-		}
-
-		// Return an HTTP error messages
-		return echo.NewHTTPError(http.StatusBadRequest, ErrMsgs)
+	//	Validation
+	// Pending to change back to the original approach if have time
+	if len(req.Password) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "password is invalid")
 	}
-
-	// end of validation
 
 	user, err := h.UserRepo.GetUser(ctx, req.UserID)
 	if err != nil {
-		// add another error msg when a id not found
-		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, "User not found")
-		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -268,26 +228,6 @@ func (h *Handler) AddItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	// Validation -- want to change the validation instead of calling the external function
-
-	validate := validator.New()
-	if err := validate.Struct(req); err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-
-		// Initialize an empty slice for error messages
-		ErrMsgs := make([]string, len(validationErrors))
-
-		// Loop through the validation errors, mapping each to a user-friendly message
-		for i, e := range validationErrors {
-			ErrMsgs[i] = mapErrorMessage(e)
-		}
-
-		// Return an HTTP error messages
-		return echo.NewHTTPError(http.StatusBadRequest, ErrMsgs)
-	}
-
-	// end of validation
-
 	userID, err := getUserID(c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
@@ -296,6 +236,27 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
+	// validation
+	if file.Size > 1<<20 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	}
+	if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
+		return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
+	}
+	if req.Price <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	}
+	if req.Name == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
+	}
+	if req.CategoryID <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
+	}
+	if req.Description == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
+	}
+	// end of validation
 
 	src, err := file.Open()
 	if err != nil {
@@ -308,17 +269,6 @@ func (h *Handler) AddItem(c echo.Context) error {
 	// TODO: pass very big file
 	// http.StatusBadRequest(400)
 
-	// passing error if the image is bigger than 1MB
-	const MaxSize = 1 << 20 // 1MB
-	if file.Size > MaxSize {
-		return echo.NewHTTPError(http.StatusBadRequest, "file size exceeds limit")
-	}
-
-	// passing error if the image is not jpeg
-	if file.Header.Get("Content-Type") != "image/jpeg" && file.Header.Get("Content-Type") != "image/png" {
-		return echo.NewHTTPError(http.StatusBadRequest, "file type must be jpeg or png")
-	}
-
 	if _, err := io.Copy(blob, src); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -326,7 +276,7 @@ func (h *Handler) AddItem(c echo.Context) error {
 	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusBadRequest, "invalid categoryID")
+			return echo.NewHTTPError(http.StatusBadRequest, "category does not exist")
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -347,6 +297,16 @@ func (h *Handler) AddItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
 }
 
+// func (h *Handler) EditItem(c echo.Context) error {
+// 	ctx := c.Request().Context()
+
+// 	req := new(editItemRequest)
+// 	if err := c.Bind(req); err != nil {
+// 		return echo.NewHTTPError(http.StatusBadRequest, err)
+// 	}
+
+// 	itemID, err := strconv.
+
 func (h *Handler) Sell(c echo.Context) error {
 	ctx := c.Request().Context()
 	req := new(sellRequest)
@@ -355,35 +315,32 @@ func (h *Handler) Sell(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	// get the current logged in user information to req
-	var err error
-	req.UserID, err = getUserID(c)
+	UserID, err := getUserID(c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
 	item, err := h.ItemRepo.GetItem(ctx, req.ItemID)
 	// TODO: not found handling
-	// http.StatusNotFound(404)
+	// http.StatusPreconditionFailed(412)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, "Item not found")
+			return echo.NewHTTPError(http.StatusPreconditionFailed, err)
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	// no need to check user 404 because it is loggged in already
 
 	// TODO: check req.UserID and item.UserID
 	// http.StatusPreconditionFailed(412)
-	if req.UserID != item.UserID {
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "the item is not yours")
+	if item.UserID != UserID {
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "cannot sell other user's item")
 	}
-
 	// TODO: only update when status is initial
 	// http.StatusPreconditionFailed(412)
 	if item.Status != domain.ItemStatusInitial {
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "the item is in the state of initial. It has been on sale or sold.")
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "invalid status. Has been sold or on sale")
 	}
+
 	if err := h.ItemRepo.UpdateItemStatus(ctx, item.ID, domain.ItemStatusOnSale); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -399,7 +356,7 @@ func (h *Handler) GetOnSaleItems(c echo.Context) error {
 	// http.StatusNotFound(404)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, "Item not found")
+			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -433,7 +390,7 @@ func (h *Handler) GetItem(c echo.Context) error {
 	// http.StatusNotFound(404)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, "Item not found")
+			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -467,7 +424,7 @@ func (h *Handler) GetUserItems(c echo.Context) error {
 	// http.StatusNotFound(404)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, "No items listed for this user")
+			return echo.NewHTTPError(http.StatusNotFound, "No items found for this user")
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -496,7 +453,7 @@ func (h *Handler) GetCategories(c echo.Context) error {
 	// http.StatusNotFound(404)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, "Category not found")
+			return echo.NewHTTPError(http.StatusNotFound, "Categories not found")
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -532,7 +489,6 @@ func (h *Handler) GetImage(c echo.Context) error {
 	}
 
 	return c.Blob(http.StatusOK, contentType, data)
-	// TODO: might need to change it to accept both jpeg and png
 }
 
 func (h *Handler) AddBalance(c echo.Context) error {
@@ -542,10 +498,8 @@ func (h *Handler) AddBalance(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
-
-	// Checking if the balance to be added is negative
-	if req.Balance < 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "Cannot add negative balance")
+	if req.Balance <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "balance must be positive")
 	}
 
 	userID, err := getUserID(c)
@@ -557,8 +511,8 @@ func (h *Handler) AddBalance(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusPreconditionFailed, "User not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -582,8 +536,8 @@ func (h *Handler) GetBalance(c echo.Context) error {
 	// TODO: not found handling
 	// http.StatusPreconditionFailed(412)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusPreconditionFailed, "User not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
@@ -677,6 +631,41 @@ func (h *Handler) Purchase(c echo.Context) error {
 	return c.JSON(http.StatusOK, "successful")
 }
 
+// Search API
+// Search Item By Keyword
+func (h *Handler) SearchItemByKeyword(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Retrieve the keyword from query parameters
+	keyword := c.QueryParam("name")
+	if keyword == "" {
+		// Keyword is required
+		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
+	}
+
+	// Call your repository method
+	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	// return the response
+	var res []getUserItemsResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
 func getUserID(c echo.Context) (int64, error) {
 	user := c.Get("user").(*jwt.Token)
 	if user == nil {
@@ -698,65 +687,43 @@ func getEnv(key string, defaultValue string) string {
 	return value
 }
 
-// Error returns when registering and logining
-func mapErrorMessage(e validator.FieldError) string {
-	var ErrMsg string
+// func (h *Handler) CreateCategory(ctx context.Context, categoryName string) (domain.Category, error) {
+// 	// Validate the category name
+// 	if !isValidCategoryName(categoryName) {
+// 		return domain.Category{}, fmt.Errorf("Invalid category name")
+// 	}
 
-	switch e.Tag() {
-	case "required":
-		ErrMsg = fmt.Sprintf("%s is required", e.Field())
-	case "min":
-		ErrMsg = fmt.Sprintf("%s must be at least %s characters long", e.Field(), e.Param())
-	case "max":
-		ErrMsg = fmt.Sprintf("%s must be at most %s characters long", e.Field(), e.Param())
-	case "alphanum":
-		ErrMsg = fmt.Sprintf("%s must only contain alphanumeric characters", e.Field())
-	case "gte":
-		ErrMsg = fmt.Sprintf("%s must be greater than or equal to %s", e.Field(), e.Param())
-	case "lte":
-		ErrMsg = fmt.Sprintf("%s must be less than or equal to %s", e.Field(), e.Param())
-	case "password":
-		ErrMsg = ("The password needs to be 6-20 characters long, and contain at least two groups of the following: uppercase letters, lowercase letters, numbers, and symbols")
-	default:
-		ErrMsg = fmt.Sprintf("%s is not valid", e.Field())
-	}
+// 	// Check if the category already exists in the database
+// 	_, err := h.ItemRepo.GetCategory(ctx, categoryName)
+// 	if err != nil {
+// 		if err != sql.ErrNoRows {
+// 			return domain.Category{}, err
+// 		}
 
-	return ErrMsg
-}
+// 		// If the category doesn't exist, proceed with creating it
+// 		category, err := h.ItemRepo.AddCategory(ctx, domain.Category{
+// 			Name: categoryName,
+// 		})
+// 		if err != nil {
+// 			return domain.Category{}, err
+// 		}
 
-// Customize validator function for password
-func passwordValidator(fl validator.FieldLevel) bool {
-	num := `[0-9]`
-	az := `[a-z]`
-	AZ := `[A-Z]`
-	special := `[!@#\$%\^&\*\(\)\\_\+\-=\[\]\{\};':",.<>\/\?\\|]`
-	pwd := fl.Field().String()
+// 		// Successfully created the category
+// 		return category, nil
+// 	}
+// 	return domain.Category{}, fmt.Errorf("Category already exists")
+// }
 
-	// check if the length of the password meet the requirment
-	if len(pwd) < 6 || len(pwd) > 32 {
-		return false
-	}
+// a function check whether the name is valid or not. Name must not be zero
+// func isValidName(name string) bool {
+// 	return len(name) == 0
+// }
 
-	// set a counter
-	// the password needs to contains at least 1 characters from the two groups among the four
-	count := 0
-	if m, _ := regexp.MatchString(num, pwd); m {
-		count++
-	}
-	if m, _ := regexp.MatchString(az, pwd); m {
-		count++
-	}
-	if m, _ := regexp.MatchString(AZ, pwd); m {
-		count++
-	}
-	if m, _ := regexp.MatchString(special, pwd); m {
-		count++
-	}
+// // a function check whether the password is valid or not. Password must 6-20 characters.
+// func isValidPassword(password string) bool {
+// 	return len()
+// }
 
-	if count < 2 {
-		return false
-	}
-
-	return true
-
-}
+// func isValidCategoryName(categoryName string) bool {
+// 	return regexp.MustCompile(`^[a-zA-Z]{1,30}$`).MatchString(categoryName)
+// }
