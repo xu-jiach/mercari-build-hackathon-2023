@@ -26,6 +26,10 @@
   padding: 8px;
   width: 300px;
 }
+.page-content-container{
+  display: flex;
+  justify-content: center;
+}
 
 /* default values */
 
@@ -37,11 +41,11 @@
   align-items: center;
   justify-content: left;
   font-size: calc(10px + 1vmin);
-  
+
 }
 
 #MerTextInput {
-  
+
 }
 
 #MerInputLabel {
@@ -111,7 +115,7 @@
   align-items: center;
   justify-content: left;
   font-size: calc(10px + 1vmin);
-  
+
 }
 
 .Listing {
@@ -126,7 +130,7 @@
   align-items: center;
   justify-content: left;
   font-size: calc(10px + 1vmin);
-  
+
 }
 
 .ListingForm {
