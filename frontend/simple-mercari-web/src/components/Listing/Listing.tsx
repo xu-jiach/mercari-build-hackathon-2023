@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, ReactNode, ChangeEvent}  from "react";
 import {useParams} from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
+import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel, SelectChangeEvent } from '@mui/material';
+
 
 interface Category {
   id: number;
@@ -47,11 +49,11 @@ export const Listing: React.FC = () => {
     });
   };
 
-  const onSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setValues({
-      ...values,
-      [event.target.name]: event.target.value,
-    });
+  const onSelectChange = (event: SelectChangeEvent<number>) => {
+      setValues({
+          ...values,
+          [event.target.name]: event.target.value,
+      });
   };
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,98 +236,109 @@ export const Listing: React.FC = () => {
   }, [newCategory, categories]);
 
 
-
-
-  return (
-  <MerComponent>
-    <div className="Listing">
-      <form onSubmit={onSubmit} className="ListingForm">
-        <div>
-            <input
-            type="text"
-            name="name"
-            id="MerTextInput"
-            placeholder="name"
-            onChange={onValueChange}
-            value={values.name}
-            required
-          />
-          <select
-            name="category_id"
-            id="MerTextInput"
-            value={values.category_id}
-            onChange={onSelectChange}
-          >
-            <option value="0">-</option>
-            {categories &&
-              categories.map((category) => {
-                return <option value={category.id}>{category.name}</option>;
-              })}
-          </select>
-            <input
-            type="checkbox"
-            id="newCategoryCheckbox"
-            name="newCategoryCheckbox"
-            checked={newCategoryCheckboxChecked}
-            onChange={(event) => {
-              const checked = event.target.checked;
-              setNewCategoryCheckboxChecked(checked);
-              if (checked) {
-                setValues({
-                  ...values,
-                  category_id: 0,
-                  newCategory: "",
-                });
-              } else {
-                setValues({
-                  ...values,
-                  category_id: 0,
-                  newCategory: "",
-                });
-              }
-            }}
-          />
-          <label htmlFor="newCategoryCheckbox">I didn't find my category</label>
-          <input
-            type="text"
-            name="newCategory"
-            id="newCategory"
-            placeholder="Enter new category"
-            onChange={onNewCategoryChange}
-            disabled={values.category_id !== 0}
-        />
-          <input
-            type="number"
-            name="price"
-            id="MerTextInput"
-            placeholder="price"
-            onChange={onValueChange}
-            value={values.price}
-            required
-          />
-          <input
-            type="text"
-            name="description"
-            id="MerTextInput"
-            placeholder="description"
-            onChange={onValueChange}
-            value={values.description}
-            required
-          />
-          <input
-            type="file"
-            name="image"
-            id="MerTextInput"
-            onChange={onFileChange}
-            required
-          />
-          <button type="submit" id="MerButton">
-            List this item
-          </button>
-        </div>
-      </form>
-    </div>
-  </MerComponent>
-
-  );
-};
+  return(
+    <MerComponent>
+      <div className="Listing">
+        <form onSubmit={onSubmit}>
+          <div className="listing-form">
+              <TextField
+                id="name"
+                name="name"
+                value={values.name}
+                onChange={onValueChange}
+                label="Name"
+                required
+                sx={{ mb: 3}}
+              />
+              <FormControl>
+                <InputLabel id="category-label">Category</InputLabel>
+                <Select
+                  labelId="category-label"
+                  id="category_id"
+                  name="category_id"
+                  value={values.category_id}
+                  onChange={onSelectChange}
+                  sx={{ mt: 3 }}
+                >
+                  <MenuItem value={0} disabled>Select a category</MenuItem> {/* Placeholder item */}
+                  {categories &&
+                    categories.map((category) => {
+                      return <MenuItem value={category.id}>{category.name}</MenuItem>;
+                    })}
+                </Select>
+              </FormControl>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={newCategoryCheckboxChecked}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setNewCategoryCheckboxChecked(checked);
+                      if (checked) {
+                        setValues({
+                          ...values,
+                          category_id: 0,
+                          newCategory: "",
+                        });
+                      } else {
+                        setValues({
+                          ...values,
+                          category_id: 0,
+                          newCategory: "",
+                        });
+                      }
+                    }}
+                  />
+                }
+                label="Create a new category"
+              />
+              <TextField
+                id="newCategory"
+                name="newCategory"
+                value={newCategory}
+                onChange={onNewCategoryChange}
+                label="New Category"
+                disabled={!newCategoryCheckboxChecked}
+                sx={{ mt: 3 }}
+              />
+              <TextField
+                type="number"
+                id="price"
+                name="price"
+                value={values.price}
+                onChange={onValueChange}
+                label="Price"
+                required
+                sx={{ mt: 3 }}
+              />
+              <TextField
+                id="description"
+                name="description"
+                value={values.description}
+                onChange={onValueChange}
+                label="Description"
+                required
+                multiline
+                rows={4}
+                sx={{ mt: 3 }}
+              />
+              <Button variant="contained" component="label" sx={{ mt: 3 }}>
+                Upload Image
+                <input
+                  type="file"
+                  name="image"
+                  id="image"
+                  onChange={onFileChange}
+                  required
+                  hidden
+                />
+              </Button>
+              <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
+                List
+              </Button>
+          </div>
+        </form>
+      </div>
+    </MerComponent>
+  )
+              };

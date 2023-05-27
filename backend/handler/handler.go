@@ -833,3 +833,24 @@ func (h *Handler) AddCategory(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
 }
+
+// GPT3 API
+// Somewhere in your code, define this function that calls GPT-3 API
+// func generateDescriptionGPT3(name string, categoryID int) (string, error) {
+// 	// Call OpenAI's GPT-3 API here and generate the description based on the item's name and category
+// 	// This is a placeholder, actual implementation depends on how you setup GPT-3
+// }
+
+// func (h *Handler) GenerateDescription(c echo.Context) error {
+//     req := new(generateDescriptionRequest)
+//     if err := c.Bind(req); err != nil {
+//         return echo.NewHTTPError(http.StatusBadRequest, err)
+//     }
+
+//     description, err := generateDescriptionWithGPT3(req.Name, req.CategoryID)
+//     if err != nil {
+//         return echo.NewHTTPError(http.StatusInternalServerError, err)
+//     }
+
+//     return c.JSON(http.StatusOK, generateDescriptionResponse{Description: description})
+// }
