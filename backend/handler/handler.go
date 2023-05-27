@@ -256,6 +256,7 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 	if file.Size == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
+	}
 	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
 	// }
@@ -341,6 +342,7 @@ func (h *Handler) EditItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
 	if existingItem.UserID != userID {
 		return echo.NewHTTPError(http.StatusUnauthorized, "User is not the owner of the item")
 	}
@@ -379,6 +381,7 @@ func (h *Handler) EditItem(c echo.Context) error {
 	}
 	if file.Size == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
+	}
 	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
 	// }
