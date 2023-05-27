@@ -3,7 +3,7 @@ package domain
 type ItemStatus int
 
 const (
-	ItemStatusInitial ItemStatus = iota
+	ItemStatusInitial ItemStatus = iota + 1
 	ItemStatusOnSale
 	ItemStatusSoldOut
 )

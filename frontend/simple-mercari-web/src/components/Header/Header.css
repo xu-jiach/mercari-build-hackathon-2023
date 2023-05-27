@@ -10,11 +10,8 @@ header {
   top: 1rem;
   width: 100px;
 }
-
 .logo{
-  height: 3.5em;
-  width: auto;
+  width: 7em;
+  aspect-ratio: 7/3.5;
   padding-left: 5em;
 }
-
-/*test*/
