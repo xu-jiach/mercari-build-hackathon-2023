@@ -211,8 +211,8 @@ export const Listing: React.FC = () => {
 
       useEffect(() => {
         fetchCategories();
+        fetchItemDetails();
       }, []);
-
 
   // Effect that runs whenever the new category name changes
   useEffect(() => {
