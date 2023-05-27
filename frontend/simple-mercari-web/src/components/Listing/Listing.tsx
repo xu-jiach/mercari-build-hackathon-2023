@@ -39,6 +39,7 @@ export const Listing: React.FC = () => {
   const [cookies] = useCookies(["token", "userID"]);
   // Add an itemId state variable, it's null when creating a new item, set to the item's id when editing an existing item.
   const { itemId } = useParams<{ itemId: string }>();
+  const [fileName, setFileName] = useState("");
   const isEditing = itemId !== undefined;
 
 
@@ -61,6 +62,7 @@ export const Listing: React.FC = () => {
       ...values,
       [event.target.name]: event.target.files![0],
     });
+    setFileName(event.target.files![0]?.name || ""); // Set file name
   };
 
   // This function will handle changes in the newCategory input
@@ -123,11 +125,12 @@ export const Listing: React.FC = () => {
       })
         .then(() => {
           toast.success("Item updated successfully!");
+          sell(Number(itemId), isEditing); 
         })
         .catch((error: Error) => {
           toast.error(error.message);
           console.error("PUT error:", error);
-        });
+        });      
     } else {
       // Send a POST request to create a new item
       fetcher(`/items`, {
@@ -138,7 +141,7 @@ export const Listing: React.FC = () => {
         },
       })
         .then((res) => {
-          sell(res.id);
+          sell(res.id, isEditing);
         })
         .catch((error: Error) => {
           toast.error(error.message);
@@ -176,7 +179,7 @@ export const Listing: React.FC = () => {
     }
   };
 
-  const sell = (itemID: number) =>
+    const sell = (itemID: number, isEditing: boolean) =>
     fetcher(`/sell`, {
       method: "POST",
       headers: {
@@ -189,27 +192,30 @@ export const Listing: React.FC = () => {
       }),
     })
       .then((_) => {
-        toast.success("Item added successfully!");
+        // only display "Item added successfully!" toast if not editing
+        if (!isEditing) {
+          toast.success("Item added successfully!");
+        }
       })
       .catch((error: Error) => {
         toast.error(error.message);
         console.error("POST error:", error);
       });
 
-      const fetchCategories = () => {
-        fetcher<Category[]>(`/items/categories`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        })
-          .then((items) => setCategories(items))
-          .catch((err) => {
-            console.log(`GET error:`, err);
-            toast.error(err.message);
-          });
-      };
+    const fetchCategories = () => {
+      fetcher<Category[]>(`/items/categories`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      })
+        .then((items) => setCategories(items))
+        .catch((err) => {
+          console.log(`GET error:`, err);
+          toast.error(err.message);
+        });
+    };
 
       useEffect(() => {
         fetchCategories();
@@ -333,6 +339,7 @@ export const Listing: React.FC = () => {
                   hidden
                 />
               </Button>
+              {fileName && <div>Selected file: {fileName}</div>} 
               <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
                 List
               </Button>
