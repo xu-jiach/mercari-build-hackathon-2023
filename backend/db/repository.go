@@ -30,7 +30,7 @@ func (r *UserDBRepository) AddUser(ctx context.Context, user domain.User) (int64
 		return 0, err
 	}
 
-	if _, err := tx.ExecContext(ctx, "INSERT INTO users (name, password VALUES (?, ?)", user.Name, user.Password); err != nil {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO users (name, password) VALUES (?, ?)", user.Name, user.Password); err != nil {
 		tx.Rollback()
 		return 0, echo.NewHTTPError(http.StatusConflict, err)
 	} else {
