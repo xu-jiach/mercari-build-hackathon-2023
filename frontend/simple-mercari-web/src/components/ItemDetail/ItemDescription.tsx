@@ -7,10 +7,13 @@ import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
 import { Chip, TextField, FormControlLabel, Checkbox } from "@mui/material";
 
-
+type InPersonPasscode = {
+    password: string;
+}
 
 export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({item, isOwner}) => {
     const [imWithSeller, setImWithSeller] = useState(false);
+    const [inPersonPasscode, setInPersonPasscode] = useState<string | null>(null);
 
     const navigate = useNavigate();
     const [cookies] = useCookies(["token", "userID"]);
@@ -35,6 +38,30 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
             });
     };
 
+    const getInPersonPasscode = () => {
+        fetcher<InPersonPasscode>(`/items/${params.id}/pass`, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${cookies.token}`,
+            },
+        })
+            .then((res) => {
+                console.log(`GET response:`, res);
+                setInPersonPasscode(res.password);
+            })
+            .catch((err) => {
+                console.log(`GET error:`, err);
+            });
+    }
+
+    useEffect(() => {
+        if (isOwner) {
+            getInPersonPasscode();
+        }
+    }, []);
+
     return (
         <div className={"description-container"}>
             <h1>{item.name}</h1>
@@ -55,10 +82,9 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
                         >
                             Edit
                         </Button>
-                        {/* {inPersonPasscode &&(
-                          <p><strong>In person purchasing with passcode: #VW-4869</strong></p>
-                        )} */}
-                        <p><strong>In person purchasing with passcode: #VW-4869</strong></p>
+                         {inPersonPasscode &&(
+                          <p><strong>In person purchasing with passcode: {inPersonPasscode}</strong></p>
+                        )}
                       </>
                     )}
                     <hr/>

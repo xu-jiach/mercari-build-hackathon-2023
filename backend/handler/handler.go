@@ -71,6 +71,10 @@ type getItemResponse struct {
 	Status       domain.ItemStatus `json:"status"`
 }
 
+type getItemPasswordResponse struct {
+	Password string `json:"password"`
+}
+
 type getCategoriesResponse struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
@@ -81,10 +85,11 @@ type sellRequest struct {
 }
 
 type addItemRequest struct {
-	Name        string `form:"name"`
-	CategoryID  int64  `form:"category_id"`
-	Price       int64  `form:"price"`
-	Description string `form:"description"`
+	Name         string `form:"name"`
+	CategoryID   int64  `form:"category_id"`
+	Price        int64  `form:"price"`
+	Description  string `form:"description"`
+	ItemPassword string `form:"item_password"`
 }
 
 type addItemResponse struct {
@@ -380,6 +385,15 @@ func (h *Handler) AddItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	err = h.OnsitePurchaseRepo.AddOnsitePurchase(ctx, domain.OnsitePurchase{
+		ItemID:   item.ID,
+		SellerID: userID,
+		Password: req.ItemPassword,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
 }
 
@@ -623,6 +637,28 @@ func (h *Handler) GetItem(c echo.Context) error {
 		Description:  item.Description,
 		Status:       item.Status,
 	})
+}
+
+// GetItemPassword returns item password.
+// It is separeted from GetItem not to affect benchmark.
+func (h *Handler) GetItemPassword(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
+
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid user")
+	}
+
+	pass, err := h.OnsitePurchaseRepo.GetItemPassword(ctx, userID, int32(itemID))
+	if err != nil {
+		c.Logger().Printf("failed to get item password: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+	}
+
+	return c.JSON(http.StatusOK, getItemPasswordResponse{Password: pass})
+
 }
 
 func (h *Handler) GetUserItems(c echo.Context) error {

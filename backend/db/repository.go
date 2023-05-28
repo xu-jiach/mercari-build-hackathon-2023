@@ -282,6 +282,7 @@ func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID in
 type OnsitePurchaseRepository interface {
 	AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) error
 	ValidatePassword(ctx context.Context, itemID int64, password string) (bool, error)
+	GetItemPassword(ctx context.Context, userID int64, itemID int32) (string, error)
 }
 
 type OnsitePurchaseDBRepository struct {
@@ -322,4 +323,15 @@ func (r *OnsitePurchaseDBRepository) ValidatePassword(ctx context.Context, itemI
 	} else {
 		return false, nil
 	}
+}
+
+func (r *OnsitePurchaseDBRepository) GetItemPassword(ctx context.Context, userID int64, itemID int32) (string, error) {
+	row := r.QueryRowContext(ctx, "SELECT password FROM onsite_purchase WHERE item_id = ? AND seller_id = ?", itemID, userID)
+
+	var password string
+	if err := row.Scan(&password); err != nil {
+		return "", err
+	}
+
+	return password, nil
 }
