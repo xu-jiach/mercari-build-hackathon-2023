@@ -130,6 +130,22 @@ type addCategoryResponse struct {
 	Name string `json:"name"`
 }
 
+type GPT3Request struct {
+	Prompt    string `json:"prompt"`
+	MaxTokens int    `json:"max_tokens"`
+}
+
+type GPT3Response struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int    `json:"created"`
+	Model   string `json:"model"`
+	Choices []struct {
+		Text         string `json:"text"`
+		FinishReason string `json:"finish_reason"`
+	} `json:"choices"`
+}
+
 type Handler struct {
 	DB       *sql.DB
 	UserRepo db.UserRepository
@@ -387,6 +403,11 @@ func (h *Handler) EditItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
+	// Check if the filename contains any special characters
+	if strings.ContainsAny(file.Filename, "/?!") {
+		return echo.NewHTTPError(http.StatusBadRequest, "filename contains invalid characters")
+	}
 	// validation
 	// if req.Price <= 0 {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
@@ -415,23 +436,23 @@ func (h *Handler) EditItem(c echo.Context) error {
 
 	// check the file type
 	// Read the first 512 bytes to determine the file type
-	buffer := make([]byte, 512)
-	_, err = src.Read(buffer)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// buffer := make([]byte, 512)
+	// _, err = src.Read(buffer)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
 
-	// Reset the reader back to the start of the file
-	_, err = src.Seek(0, io.SeekStart)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// // Reset the reader back to the start of the file
+	// _, err = src.Seek(0, io.SeekStart)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
 
-	// Detect the content type of the file
-	contentType := http.DetectContentType(buffer)
-	if !strings.HasPrefix(contentType, "image/") {
-		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
-	}
+	// // Detect the content type of the file
+	// contentType := http.DetectContentType(buffer)
+	// if !strings.HasPrefix(contentType, "image/") {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	// }
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
@@ -942,6 +963,7 @@ func (h *Handler) AddCategory(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
 }
+
 
 //search by category api
 func (h *Handler) GetItemsByCategory(c echo.Context) error {
