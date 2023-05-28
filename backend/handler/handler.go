@@ -300,25 +300,25 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 	defer src.Close()
 
-	// check the file type
-	// Read the first 512 bytes to determine the file type
-	buffer := make([]byte, 512)
-	_, err = src.Read(buffer)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// // check the file type
+	// // Read the first 512 bytes to determine the file type
+	// buffer := make([]byte, 512)
+	// _, err = src.Read(buffer)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
 
-	// Reset the reader back to the start of the file
-	_, err = src.Seek(0, io.SeekStart)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// // Reset the reader back to the start of the file
+	// _, err = src.Seek(0, io.SeekStart)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
 
-	// Detect the content type of the file
-	contentType := http.DetectContentType(buffer)
-	if !strings.HasPrefix(contentType, "image/") {
-		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
-	}
+	// // Detect the content type of the file
+	// contentType := http.DetectContentType(buffer)
+	// if !strings.HasPrefix(contentType, "image/") {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	// }
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
@@ -967,8 +967,7 @@ func (h *Handler) AddCategory(c echo.Context) error {
 	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
 }
 
-
-//search by category api
+// search by category api
 func (h *Handler) GetItemsByCategory(c echo.Context) error {
 	ctx := c.Request().Context()
 
