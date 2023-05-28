@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -284,6 +285,26 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 	defer src.Close()
 
+	// check the file type
+	// Read the first 512 bytes to determine the file type
+	buffer := make([]byte, 512)
+	_, err = src.Read(buffer)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Reset the reader back to the start of the file
+	_, err = src.Seek(0, io.SeekStart)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Detect the content type of the file
+	contentType := http.DetectContentType(buffer)
+	if !strings.HasPrefix(contentType, "image/") {
+		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	}
+
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
 
@@ -396,6 +417,26 @@ func (h *Handler) EditItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	defer src.Close()
+
+	// check the file type
+	// Read the first 512 bytes to determine the file type
+	buffer := make([]byte, 512)
+	_, err = src.Read(buffer)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Reset the reader back to the start of the file
+	_, err = src.Seek(0, io.SeekStart)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Detect the content type of the file
+	contentType := http.DetectContentType(buffer)
+	if !strings.HasPrefix(contentType, "image/") {
+		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	}
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
