@@ -668,7 +668,7 @@ func (h *Handler) Purchase(c echo.Context) error {
 
 	// Return error if the itemID is out of range
 	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
-	if err != nil || itemID > math.MaxInt32 || itemID < math.MinInt32 {
+	if err != nil || itemID > math.MaxInt32 || itemID < 0 {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
 	}
@@ -714,11 +714,6 @@ func (h *Handler) Purchase(c echo.Context) error {
 	}
 
 	// Continue with the status update if the item is on sale and user has enough balance to finish the transactions.
-	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
-	}
-
 	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
