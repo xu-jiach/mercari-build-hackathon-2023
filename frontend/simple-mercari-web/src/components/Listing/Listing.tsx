@@ -126,12 +126,12 @@ export const Listing: React.FC = () => {
       })
         .then(() => {
           toast.success("Item updated successfully!");
-          sell(Number(itemId), isEditing); 
+          sell(Number(itemId), isEditing);
         })
         .catch((error: Error) => {
           toast.error(error.message);
           console.error("PUT error:", error);
-        });      
+        });
     } else {
       // Send a POST request to create a new item
       fetcher(`/items`, {
@@ -341,7 +341,7 @@ export const Listing: React.FC = () => {
                   hidden
                 />
               </Button>
-              {fileName && <div>Selected file: {fileName}</div>} 
+              {fileName && <div className="mt1">Selected file: {fileName}</div>}
               <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
                 List
               </Button>

@@ -3,6 +3,7 @@ import { Signup } from "../Signup";
 import { ItemList } from "../ItemList";
 import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
+import { Categories } from "../Categories";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
@@ -69,11 +70,15 @@ export const Home = () => {
   );
 
   const itemListPage = (
-    <MerComponent>
-      <div>
-        <ItemList items={items} />
-      </div>
-    </MerComponent>
+    <>
+      <Categories/>
+      <MerComponent>
+        <div>
+          <ItemList items={items} />
+        </div>
+      </MerComponent>
+    </>
+
   );
 
   return <>{cookies.token ? itemListPage : signUpAndSignInPage}</>;
