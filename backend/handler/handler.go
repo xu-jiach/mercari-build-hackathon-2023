@@ -666,11 +666,11 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
-    // Return error if the itemID is out of range
+	// Return error if the itemID is out of range
 	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
 	if err != nil || itemID > math.MaxInt32 || itemID < math.MinInt32 {
 		c.Logger().Error(err)
-		return c.JSON(http.StatusBadRequest, "Invalid itemID")
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
 	}
 
 	// Get the item from the database.
@@ -678,16 +678,16 @@ func (h *Handler) Purchase(c echo.Context) error {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Logger().Error(err)
-			return c.JSON(http.StatusPreconditionFailed, "Item not found.")
+			return echo.NewHTTPError(http.StatusPreconditionFailed, "Item not found.")
 		}
 		c.Logger().Error(err)
-		return c.JSON(http.StatusInternalServerError, "Internal server error.")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
 	}
 
 	// Prevent the user from buying their own items.
 	if item.UserID == userID {
 		c.Logger().Error(err)
-		return c.JSON(http.StatusPreconditionFailed, "You cannot buy your own item.")
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "You cannot buy your own item.")
 	}
 
 	// If the item is not on sale, return a 412 error.
