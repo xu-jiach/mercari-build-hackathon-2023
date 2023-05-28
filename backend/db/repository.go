@@ -71,7 +71,9 @@ type ItemRepository interface {
 	GetCategories(ctx context.Context) ([]domain.Category, error)
 	GetItemByKeyword(ctx context.Context, keyword string) ([]domain.Item, error)
 	UpdateItemStatus(ctx context.Context, id int32, status domain.ItemStatus) error
+	GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) // for category search page
 }
+
 
 type ItemDBRepository struct {
 	*sql.DB
@@ -130,8 +132,13 @@ func (r *ItemDBRepository) GetItem(ctx context.Context, id int32) (domain.Item, 
 
 func (r *ItemDBRepository) GetItemImage(ctx context.Context, id int32) ([]byte, error) {
 	row := r.QueryRowContext(ctx, "SELECT image FROM items WHERE id = ?", id)
+
 	var image []byte
-	return image, row.Scan(&image)
+	if err := row.Scan(&image); err != nil {
+		return nil, err
+	}
+
+	return image, nil
 }
 
 func (r *ItemDBRepository) GetOnSaleItems(ctx context.Context) ([]domain.Item, error) {
@@ -249,4 +256,27 @@ func (r *ItemDBRepository) GetCategoryByName(ctx context.Context, name string) (
 
 	var cat domain.Category
 	return cat, row.Scan(&cat.ID, &cat.Name)
+}
+
+
+//categories id page method
+func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) {
+	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE category_id = ?", categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []domain.Item
+	for rows.Next() {
+		var item domain.Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Price, &item.Description, &item.CategoryID, &item.UserID, &item.Image, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

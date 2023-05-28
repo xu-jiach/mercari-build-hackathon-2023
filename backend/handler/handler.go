@@ -7,11 +7,11 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -128,6 +128,22 @@ type addCategoryRequest struct {
 type addCategoryResponse struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+type GPT3Request struct {
+	Prompt    string `json:"prompt"`
+	MaxTokens int    `json:"max_tokens"`
+}
+
+type GPT3Response struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int    `json:"created"`
+	Model   string `json:"model"`
+	Choices []struct {
+		Text         string `json:"text"`
+		FinishReason string `json:"finish_reason"`
+	} `json:"choices"`
 }
 
 type Handler struct {
@@ -259,15 +275,15 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 
 	// validation
-	if file.Size > 1<<20 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
-	}
-	if file.Size == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
-	}
-	if req.Price <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
-	}
+	// if file.Size > 1<<20 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	// }
+	// if file.Size == 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
+	// }
+	// if req.Price <= 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	// }
 	// validation
 	// if req.Name == "" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
@@ -283,6 +299,26 @@ func (h *Handler) AddItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	defer src.Close()
+
+	// check the file type
+	// Read the first 512 bytes to determine the file type
+	buffer := make([]byte, 512)
+	_, err = src.Read(buffer)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Reset the reader back to the start of the file
+	_, err = src.Seek(0, io.SeekStart)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	// Detect the content type of the file
+	contentType := http.DetectContentType(buffer)
+	if !strings.HasPrefix(contentType, "image/") {
+		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	}
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
@@ -336,27 +372,23 @@ func (h *Handler) EditItem(c echo.Context) error {
 
 	req := new(editItemRequest)
 	if err := c.Bind(req); err != nil {
-		log.Println("Failed to bind request: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	itemIdParam := c.Param("itemID")
 	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
 	if err != nil {
-		log.Println("Invalid item ID: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
 	}
 
 	userID, err := getUserID(c)
 	if err != nil {
-		log.Println("Failed to get user ID: ", err)
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
 	req.ID = int32(itemId)
 	existingItem, err := h.ItemRepo.GetItem(ctx, req.ID)
 	if err != nil {
-		log.Println("Failed to get item: ", err)
 		if errors.Is(err, sql.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "Item not found")
 		}
@@ -371,10 +403,15 @@ func (h *Handler) EditItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
-	// validation
-	if req.Price <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+
+	// Check if the filename contains any special characters
+	if strings.ContainsAny(file.Filename, "/?!") {
+		return echo.NewHTTPError(http.StatusBadRequest, "filename contains invalid characters")
 	}
+	// validation
+	// if req.Price <= 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	// }
 	// if req.Name == "" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
 	// }
@@ -384,18 +421,38 @@ func (h *Handler) EditItem(c echo.Context) error {
 	// end of validation
 
 	// validation
-	if file.Size > 1<<20 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
-	}
-	if file.Size == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
-	}
+	// if file.Size > 1<<20 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	// }
+	// if file.Size == 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
+	// }
 
 	src, err := file.Open()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	defer src.Close()
+
+	// check the file type
+	// Read the first 512 bytes to determine the file type
+	// buffer := make([]byte, 512)
+	// _, err = src.Read(buffer)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
+
+	// // Reset the reader back to the start of the file
+	// _, err = src.Seek(0, io.SeekStart)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
+
+	// // Detect the content type of the file
+	// contentType := http.DetectContentType(buffer)
+	// if !strings.HasPrefix(contentType, "image/") {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	// }
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
@@ -447,7 +504,6 @@ func (h *Handler) EditItem(c echo.Context) error {
 		Status:      domain.ItemStatusInitial,
 	})
 	if err != nil {
-		log.Println("Failed to edit item: ", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -794,6 +850,7 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
 	if err != nil {
 		c.Logger().Error(err)
+		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
@@ -808,6 +865,47 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 		for _, cat := range cats {
 			if cat.ID == item.CategoryID {
 				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// SearchItemAndInfoByKeyword Almost equivalent to SearchItemByKeyword.
+// Returns []getItemResponse
+// Kurumi created this not to disturb the bench test.
+func (h *Handler) SearchItemAndInfoByKeyword(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Retrieve the keyword from query parameters
+	keyword := c.QueryParam("name")
+	if keyword == "" {
+		// Keyword is required
+		c.Logger().Error("Keyword is required")
+		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
+	}
+
+	// Call your repository method
+	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
+	if err != nil {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	// return the response
+	var res []getItemResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			c.Logger().Error(err)
+			return c.JSON(http.StatusInternalServerError, "Internal server error")
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getItemResponse{ID: item.ID, Name: item.Name, CategoryID: item.CategoryID,
+					CategoryName: cat.Name, Price: item.Price,
+					Description: item.Description, Status: item.Status})
 			}
 		}
 	}
@@ -865,4 +963,37 @@ func (h *Handler) AddCategory(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
+}
+
+// search by category api
+func (h *Handler) GetItemsByCategory(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// get category id
+	categoryID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		// Invalid category ID
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid category ID")
+	}
+
+	// repo call
+	items, err := h.ItemRepo.GetItemsByCategory(ctx, categoryID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	var res []getUserItemsResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
 }

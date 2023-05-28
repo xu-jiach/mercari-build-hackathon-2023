@@ -9,19 +9,15 @@ import { fetcher } from "../../helper";
 import "react-toastify/dist/ReactToastify.css";
 import Divider from '@mui/material/Divider';
 import { styled } from '@mui/material/styles';
+import { Categories } from '../Categories/Categories';
+import {Item as ItemInterface} from "../../common/interfaces";
 
-interface Item {
-  id: number;
-  name: string;
-  price: number;
-  category_name: string;
-}
 export const Home = () => {
   const [cookies] = useCookies(["userID", "token"]);
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<ItemInterface[]>([]);
 
   const fetchItems = () => {
-    fetcher<Item[]>(`/items`, {
+    fetcher<ItemInterface[]>(`/items`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -69,11 +65,15 @@ export const Home = () => {
   );
 
   const itemListPage = (
-    <MerComponent>
-      <div>
-        <ItemList items={items} />
-      </div>
-    </MerComponent>
+    <>
+      <Categories />
+      <MerComponent>
+        <div>
+          <ItemList items={items} />
+        </div>
+      </MerComponent>
+    </>
+
   );
 
   return <>{cookies.token ? itemListPage : signUpAndSignInPage}</>;

@@ -31,3 +31,12 @@ CREATE TABLE IF NOT EXISTS status
     id   integer primary key,
     name varchar(50)
 );
+
+CREATE TABLE IF NOT EXISTS onsite_purchase
+(
+    id         integer primary key autoincrement,
+    item_id    integer references items(id),
+    seller_id  integer references users(id),
+    buyer_id   integer references users(id),
+    password   varchar(255)
+);
