@@ -24,10 +24,10 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
                 user_id: Number(cookies.userID),
             }),
         })
-            .then((_) => window.location.reload())
+            .then(() => window.location.reload())
             .catch((err) => {
                 console.log(`POST error:`, err);
-                toast.error("Error: " + err.status);
+                toast.error("Error: " + err.message);
             });
     };
 
