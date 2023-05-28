@@ -414,10 +414,6 @@ func (h *Handler) EditItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	// Check if the filename contains any special characters
-	if strings.ContainsAny(file.Filename, "/?!") {
-		return echo.NewHTTPError(http.StatusBadRequest, "filename contains invalid characters")
-	}
 	// validation
 	// if req.Price <= 0 {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
