@@ -7,9 +7,11 @@ import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
 import {Toolbar} from "@mui/material";
 import {useCookies} from "react-cookie";
+import {useNavigate} from "react-router-dom";
 
 export const Header: React.FC = () => {
     const [cookies] = useCookies(["userID", "token"]);
+    const navigate = useNavigate();
 
     const Search = styled('div')(({ theme }) => ({
         position: 'relative',
@@ -58,6 +60,20 @@ export const Header: React.FC = () => {
         },
     }));
 
+    const handleSubmit = (
+        e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>, search: string
+    ) => {
+        e.preventDefault();
+        navigate(`/search?keyword=${search}`);
+        window.location.reload();
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.nativeEvent.isComposing || e.key !== 'Enter') return
+        const search = e.currentTarget.value;
+        handleSubmit(e, search)
+    }
+
   return (
     <>
       <header>
@@ -73,6 +89,9 @@ export const Header: React.FC = () => {
                       <StyledInputBase
                           placeholder="Shop one-of-a-kind finds"
                           inputProps={{ 'aria-label': 'search' }}
+                          onKeyDown={handleKeyDown}
+                          // TODO: Display suggestions when user types
+                          // onChange={onChangeSuggestion}
                       />
                   </Search>
               }
