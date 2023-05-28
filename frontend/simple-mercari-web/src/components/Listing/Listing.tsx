@@ -5,6 +5,7 @@ import { MerComponent } from "../MerComponent";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel, SelectChangeEvent } from '@mui/material';
+import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 
 
 interface Category {
@@ -42,6 +43,7 @@ export const Listing: React.FC = () => {
   const [fileName, setFileName] = useState("");
   const isEditing = itemId !== undefined;
   const navigate = useNavigate();
+  const inPersonDescription = "Passcode required, only share with in person buyer"
 
 
   const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,10 +245,14 @@ export const Listing: React.FC = () => {
     }
   }, [newCategory, categories]);
 
+  const [allowInPersonPurchases, setAllowInPersonPurchases] = useState(false);
+
+
 
   return(
     <MerComponent>
       <div className="Listing">
+        <h1>List a new item</h1>
         <form onSubmit={onSubmit}>
           <div className="listing-form">
               <TextField
@@ -256,7 +262,7 @@ export const Listing: React.FC = () => {
                 onChange={onValueChange}
                 label="Name"
                 required
-                sx={{ mb: 3}}
+                sx={{ mt: 3, mb: 3}}
               />
               <FormControl>
                 <InputLabel id="category-label">Category</InputLabel>
@@ -268,14 +274,14 @@ export const Listing: React.FC = () => {
                   onChange={onSelectChange}
                   sx={{ mt: 3 }}
                 >
-                  <MenuItem value={0} disabled>Select a category</MenuItem> {/* Placeholder item */}
+                  <MenuItem value={0} disabled>Select a category</MenuItem>
                   {categories &&
                     categories.map((category) => {
                       return <MenuItem value={category.id}>{category.name}</MenuItem>;
                     })}
                 </Select>
               </FormControl>
-              <FormControlLabel
+              <FormControlLabel sx={{ mt: 3 }}
                 control={
                   <Checkbox
                     checked={newCategoryCheckboxChecked}
@@ -342,6 +348,28 @@ export const Listing: React.FC = () => {
                 />
               </Button>
               {fileName && <div className="mt1">Selected file: {fileName}</div>}
+
+              <Tooltip title={inPersonDescription} arrow>
+                <FormControlLabel sx={{ mt: 3 }}
+                  control={
+                    <Checkbox
+                      checked={allowInPersonPurchases}
+                      onChange={(event) => setAllowInPersonPurchases(event.target.checked)}
+                    />
+                  }
+                  label="Allow in person purchases"
+                />
+              </Tooltip>
+              <TextField
+                id="inPersonKey"
+                name="inPersonKey"
+                //value={values.inPersonKey}
+                onChange={onValueChange}
+                label="In Person Passcode"
+                sx={{ mt: 3 }}
+                disabled={!allowInPersonPurchases}
+              />
+
               <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
                 List
               </Button>
