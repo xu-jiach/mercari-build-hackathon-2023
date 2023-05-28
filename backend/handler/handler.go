@@ -1046,7 +1046,7 @@ func generateDescriptionWithGPT3(name string, categoryName string) (string, erro
 	fmt.Println("Starting the description generation process...")
 
 	// set up the client
-	client := openai.NewClient("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")
+	client := openai.NewClient("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")
 	ctx := context.Background()
 
 	req := openai.CompletionRequest{

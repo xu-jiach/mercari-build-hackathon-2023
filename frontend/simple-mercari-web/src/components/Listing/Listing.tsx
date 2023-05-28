@@ -134,7 +134,6 @@ export const Listing: React.FC = () => {
       data.append("price", values.price.toString());
       data.append("description", values.description);
       data.append("image", values.image);
-      const categoryName = categories.find(category => category.id === values.category_id)?.name || '';
   
       // // Now you can use the categoryName variable when calling your generateDescription endpoint:
       // const response = await fetch('/generatedescription', {
