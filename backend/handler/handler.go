@@ -85,10 +85,11 @@ type sellRequest struct {
 }
 
 type addItemRequest struct {
-	Name        string `form:"name"`
-	CategoryID  int64  `form:"category_id"`
-	Price       int64  `form:"price"`
-	Description string `form:"description"`
+	Name         string `form:"name"`
+	CategoryID   int64  `form:"category_id"`
+	Price        int64  `form:"price"`
+	Description  string `form:"description"`
+	ItemPassword string `form:"item_password"`
 }
 
 type addItemResponse struct {
@@ -384,6 +385,15 @@ func (h *Handler) AddItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
+	err = h.OnsitePurchaseRepo.AddOnsitePurchase(ctx, domain.OnsitePurchase{
+		ItemID:   item.ID,
+		SellerID: userID,
+		Password: req.ItemPassword,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
 }
 
@@ -647,6 +657,7 @@ func (h *Handler) GetItemPassword(c echo.Context) error {
 
 	pass, err := h.OnsitePurchaseRepo.GetItemPassword(ctx, userID, int32(itemID))
 	if err != nil {
+		c.Logger().Printf("failed to get item password: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 	}
 
