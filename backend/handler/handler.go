@@ -84,7 +84,6 @@ type addItemRequest struct {
 	CategoryID  int64  `form:"category_id"`
 	Price       int64  `form:"price"`
 	Description string `form:"description"`
-	Password    string `form:"password"`
 }
 
 type addItemResponse struct {
@@ -131,16 +130,10 @@ type addCategoryResponse struct {
 	Name string `json:"name"`
 }
 
-type onsitePurchaseRequest struct {
-	ItemID   int32  `json:"item_id"`
-	Password string `json:"password"`
-}
-
 type Handler struct {
-	DB                 *sql.DB
-	UserRepo           db.UserRepository
-	ItemRepo           db.ItemRepository
-	OnsitePurchaseRepo db.OnsitePurchaseRepository
+	DB       *sql.DB
+	UserRepo db.UserRepository
+	ItemRepo db.ItemRepository
 }
 
 func GetSecret() string {
@@ -350,20 +343,6 @@ func (h *Handler) AddItem(c echo.Context) error {
 		Description: req.Description,
 		Image:       blob.Bytes(),
 		Status:      domain.ItemStatusInitial,
-	})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	err = h.OnsitePurchaseRepo.AddOnsitePurchase(c.Request().Context(), domain.OnsitePurchase{
-		ItemID:   item.ID,
-		SellerID: userID,
-		Password: string(hash),
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -833,86 +812,6 @@ func (h *Handler) Purchase(c echo.Context) error {
 	return c.JSON(http.StatusOK, "successful")
 }
 
-func (h *Handler) OnsitePurchase(c echo.Context) error {
-	ctx := c.Request().Context()
-	req := new(onsitePurchaseRequest)
-
-	userID, err := getUserID(c)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, err)
-	}
-
-	// Return error if the itemID is out of range
-	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
-	if err != nil || itemID > math.MaxInt32 || itemID < 0 {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
-	}
-
-	// Get the item from the database.
-	item, err := h.ItemRepo.GetItem(ctx, int32(itemID))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusPreconditionFailed, "Item not found.")
-		}
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
-	}
-
-	// Prevent the user from buying their own items.
-	if item.UserID == userID {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "You cannot buy your own item.")
-	}
-
-	// If the item is not on sale, return a 412 error.
-	if item.Status != domain.ItemStatusOnSale {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "Item is not on sale")
-	}
-
-	// Get the user from the database.
-	user, err := h.UserRepo.GetUser(ctx, userID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusPreconditionFailed, "User not found")
-		}
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	// Check if user has enough balance
-	if user.Balance < item.Price {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "Insufficient balance")
-	}
-
-	isValid, err := h.OnsitePurchaseRepo.ValidatePassword(ctx, itemID, req.Password)
-	if err != nil {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
-	}
-	if !isValid {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "Invalid password")
-	}
-
-	// Continue with the status update if the item is on sale and user has enough balance to finish the transactions.
-	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
-	}
-
-	if err := h.UserRepo.UpdateBalance(ctx, userID, user.Balance-item.Price); err != nil {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
-	}
-
-	return c.JSON(http.StatusOK, "successful")
-}
-
 // Search API
 // Search Item By Keyword
 func (h *Handler) SearchItemByKeyword(c echo.Context) error {
@@ -1044,7 +943,7 @@ func (h *Handler) AddCategory(c echo.Context) error {
 	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
 }
 
-// search by category api
+//search by category api
 func (h *Handler) GetItemsByCategory(c echo.Context) error {
 	ctx := c.Request().Context()
 
