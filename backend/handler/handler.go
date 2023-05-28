@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 	"github.com/pkg/errors"
 	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/db"
 	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/domain"
@@ -336,27 +336,27 @@ func (h *Handler) EditItem(c echo.Context) error {
 
 	req := new(editItemRequest)
 	if err := c.Bind(req); err != nil {
-		log.Error("Failed to bind request: ", err)
+		log.Println("Failed to bind request: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	itemIdParam := c.Param("itemID")
 	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
 	if err != nil {
-		log.Error("Invalid item ID: ", err)
+		log.Println("Invalid item ID: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
 	}
 
 	userID, err := getUserID(c)
 	if err != nil {
-		log.Error("Failed to get user ID: ", err)
+		log.Println("Failed to get user ID: ", err)
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
 	req.ID = int32(itemId)
 	existingItem, err := h.ItemRepo.GetItem(ctx, req.ID)
 	if err != nil {
-		log.Error("Failed to get item: ", err)
+		log.Println("Failed to get item: ", err)
 		if errors.Is(err, sql.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "Item not found")
 		}
@@ -447,7 +447,7 @@ func (h *Handler) EditItem(c echo.Context) error {
 		Status:      domain.ItemStatusInitial,
 	})
 	if err != nil {
-		log.Error("Failed to edit item: ", err)
+		log.Println("Failed to edit item: ", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -793,7 +793,7 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	// Call your repository method
 	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
 	if err != nil {
-	    c.Logger().Error(err)
+		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
@@ -802,7 +802,7 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	for _, item := range items {
 		cats, err := h.ItemRepo.GetCategories(ctx)
 		if err != nil {
-		    c.Logger().Error(err)
+			c.Logger().Error(err)
 			return c.JSON(http.StatusInternalServerError, "Internal server error")
 		}
 		for _, cat := range cats {
