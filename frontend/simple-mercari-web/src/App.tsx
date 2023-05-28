@@ -13,6 +13,7 @@ import theme from './theme';
 import { CategoryPage } from "./components/CategoryPage/CategoryPage";
 import { Search } from "./components/Search";
 
+
 export const App: React.VFC = () => {
   return (
     <ThemeProvider theme={theme}>

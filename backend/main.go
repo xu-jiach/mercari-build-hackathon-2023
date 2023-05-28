@@ -78,7 +78,6 @@ func run(ctx context.Context) int {
 	// Routes
 	e.POST("/initialize", h.Initialize)
 	e.GET("/log", h.AccessLog)
-
 	e.GET("/items", h.GetOnSaleItems)
 	e.GET("/items/:itemID", h.GetItem)
 	e.GET("/items/:itemID/image", h.GetImage)
@@ -100,7 +99,7 @@ func run(ctx context.Context) int {
 	l.GET("/balance", h.GetBalance)
 	l.POST("/balance", h.AddBalance)
 	l.POST("/categories", h.AddCategory)
-	l.POST("/generateDescription", h.GenerateDescription)
+	l.POST("/generate", h.GenerateDescription)
 
 	// Start server
 	go func() {

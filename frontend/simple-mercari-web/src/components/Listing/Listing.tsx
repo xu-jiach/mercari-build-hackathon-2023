@@ -2,6 +2,7 @@ import React, { useEffect, useState, ReactNode, ChangeEvent}  from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
+import DescriptionGenerator  from '../Generate/Generate';
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel, SelectChangeEvent } from '@mui/material';
@@ -44,6 +45,12 @@ export const Listing: React.FC = () => {
   const isEditing = itemId !== undefined;
   const navigate = useNavigate();
   const inPersonDescription = "Passcode required, only share with in person buyer"
+  // Find the category from the categories array
+  // Get the name of the selected category
+  const [allowInPersonPurchases, setAllowInPersonPurchases] = useState(false);
+  const [generateDescriptionChecked, setGenerateDescriptionChecked] = useState(false);
+  // new for GPT
+  const [generatedDescription, setGeneratedDescription] = useState("");
 
 
   const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,14 +103,55 @@ export const Listing: React.FC = () => {
     }
   };
 
+  const generateDescription = async () => {
+    const categoryName = categories.find(category => category.id === values.category_id)?.name || '';
+    const response = await fetcher(`/generate`, {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${cookies.token}`,
+      },
+      body: JSON.stringify({
+          itemName: values.name,
+          categoryName: categoryName,
+      }), 
+    });
+
+    if (response.status === 200) {
+      const data = await response.json();
+      setGeneratedDescription(data.description);
+    } else {
+      // Handle error here
+      console.error('Failed to generate description');
+    }
+  };
+
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData();
-    data.append("name", values.name);
-    data.append("price", values.price.toString());
-    data.append("description", values.description);
-    data.append("image", values.image);
+      event.preventDefault();
+      const data = new FormData();
+      data.append("name", values.name);
+      data.append("price", values.price.toString());
+      data.append("description", values.description);
+      data.append("image", values.image);
+      const categoryName = categories.find(category => category.id === values.category_id)?.name || '';
+  
+      // // Now you can use the categoryName variable when calling your generateDescription endpoint:
+      // const response = await fetch('/generatedescription', {
+      //   method: 'POST',
+      //   headers: {
+      //       'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //       name: values.name,
+      //       categoryID: values.category_id, // change this line
+      //   }), 
+      // });
+      // const generatedDescription = await response.json();
+  
+      // // Append the generatedDescription to your FormData
+      // data.append('description', generatedDescription);
+  
 
   // If category_id is 0, create a new category and get its id
     if (values.category_id === 0) {
@@ -182,49 +230,54 @@ export const Listing: React.FC = () => {
     }
   };
 
-    const sell = (itemID: number, isEditing: boolean) =>
-    fetcher(`/sell`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${cookies.token}`,
-      },
-      body: JSON.stringify({
-        item_id: itemID,
-      }),
+  const sell = (itemID: number, isEditing: boolean) =>
+  fetcher(`/sell`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${cookies.token}`,
+    },
+    body: JSON.stringify({
+      item_id: itemID,
+    }),
+  })
+    .then((_) => {
+      // only display "Item added successfully!" toast if not editing
+      if (!isEditing) {
+        toast.success("Item added successfully!");
+      }
+      navigate('/'); // Redirect to homepage
     })
-      .then((_) => {
-        // only display "Item added successfully!" toast if not editing
-        if (!isEditing) {
-          toast.success("Item added successfully!");
-        }
-        navigate('/'); // Redirect to homepage
-      })
-      .catch((error: Error) => {
-        toast.error(error.message);
-        console.error("POST error:", error);
+    .catch((error: Error) => {
+      toast.error(error.message);
+      console.error("POST error:", error);
+    });
+
+  const fetchCategories = () => {
+    fetcher<Category[]>(`/items/categories`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    })
+      .then((items) => setCategories(items))
+      .catch((err) => {
+        console.log(`GET error:`, err);
+        toast.error(err.message);
       });
+  };
 
-    const fetchCategories = () => {
-      fetcher<Category[]>(`/items/categories`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-        .then((items) => setCategories(items))
-        .catch((err) => {
-          console.log(`GET error:`, err);
-          toast.error(err.message);
-        });
-    };
+  // test run
+  const categoryID = 1; // Replace with the actual category ID
+  const categoryName = "Example Category"; // Replace with the actual category name
 
-      useEffect(() => {
-        fetchCategories();
-        fetchItemDetails();
-      }, []);
+  
+  useEffect(() => {
+    fetchCategories();
+    fetchItemDetails();
+  }, []);
 
   // Effect that runs whenever the new category name changes
   useEffect(() => {
@@ -244,10 +297,6 @@ export const Listing: React.FC = () => {
       setNewCategory("");
     }
   }, [newCategory, categories]);
-
-  const [allowInPersonPurchases, setAllowInPersonPurchases] = useState(false);
-
-
 
   return(
     <MerComponent>
@@ -325,17 +374,40 @@ export const Listing: React.FC = () => {
                 required
                 sx={{ mt: 3 }}
               />
-              <TextField
-                id="description"
-                name="description"
-                value={values.description}
-                onChange={onValueChange}
-                label="Description"
-                required
-                multiline
-                rows={4}
-                sx={{ mt: 3 }}
+              <DescriptionGenerator 
+                itemName={values.name} 
+                categoryID={values.category_id} 
+                token={cookies.token}
+                onGenerated={(description: string) => setValues({...values, description: description})} 
               />
+              <TextField
+                      id="description"
+                      name="description"
+                      onChange={onValueChange}
+                      label="Description"
+                      placeholder={generatedDescription} // Add this line
+                      required
+                      multiline
+                      rows={4}
+                      sx={{ mt: 3 }}
+                      onKeyUp={(event) => {  // Add this function
+                        if (event.key === 'Tab') {
+                          setValues({...values, description: generatedDescription});
+                        }
+                      }}
+                    />
+                    <FormControlLabel sx={{ mt: 3 }}
+                      control={
+                        <Checkbox
+                          checked={generateDescriptionChecked}
+                          onChange={(event) => setGenerateDescriptionChecked(event.target.checked)}
+                        />
+                      }
+                      label="Generate Description"
+                    />
+                    <Button variant="contained" onClick={generateDescription} disabled={!generateDescriptionChecked}>
+                      Generate
+                    </Button>
               <Button variant="contained" component="label" sx={{ mt: 3 }}>
                 Upload Image
                 <input

@@ -74,7 +74,6 @@ type ItemRepository interface {
 	GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) // for category search page
 }
 
-
 type ItemDBRepository struct {
 	*sql.DB
 }
@@ -258,8 +257,7 @@ func (r *ItemDBRepository) GetCategoryByName(ctx context.Context, name string) (
 	return cat, row.Scan(&cat.ID, &cat.Name)
 }
 
-
-//categories id page method
+// categories id page method
 func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) {
 	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE category_id = ?", categoryID)
 	if err != nil {

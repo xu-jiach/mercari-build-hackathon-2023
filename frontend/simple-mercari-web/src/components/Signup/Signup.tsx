@@ -7,8 +7,9 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 
 export const Signup = () => {
-  const [name, setName] = useState<string>();
-  const [password, setPassword] = useState<string>();
+  const [name, setName] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false); // New state variable
   const [userID, setUserID] = useState<number>();
   const [_, setCookie] = useCookies(["userID"]);
 
@@ -38,10 +39,19 @@ export const Signup = () => {
       });
   };
 
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div>
       <div className="Signup">
-        <TextField id="outlined-basic" label="username" variant="outlined" className="text-boxes" sx={{ mt: 3}}
+        <TextField
+          id="outlined-basic"
+          label="username"
+          variant="outlined"
+          className="text-boxes"
+          sx={{ mt: 3}}
           type="text"
           name="name"
           placeholder="name"
@@ -49,17 +59,38 @@ export const Signup = () => {
             setName(e.target.value);
           }}
           required
-        /> <br/>
-        <TextField id="outlined-basic" label="password" variant="outlined" className="text-boxes" sx={{ mt: 3}}
-          type="password"
+        />
+        <br/>
+        <TextField
+          id="outlined-basic"
+          label="password"
+          variant="outlined"
+          className="text-boxes"
+          sx={{ mt: 3}}
+          type={showPassword ? "text" : "password"} // Show/hide password based on state
           name="password"
           placeholder="password"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setPassword(e.target.value);
           }}
         />
-        <Button variant="outlined" onClick={onSubmit} id="sign-in-up-btn" color="error" sx={{ mt: 3}}>
+        <Button
+          variant="outlined"
+          onClick={onSubmit}
+          id="sign-in-up-btn"
+          color="error"
+          sx={{ mt: 3}}
+        >
           Signup
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={toggleShowPassword} // Toggle show/hide password
+          id="show-password-btn"
+          color="primary"
+          sx={{ mt: 2}}
+        >
+          {showPassword ? "Hide Password" : "Show Password"}
         </Button>
         {userID ? (
           <p>Use "{userID}" as UserID for login</p>
@@ -68,3 +99,4 @@ export const Signup = () => {
     </div>
   );
 };
+
