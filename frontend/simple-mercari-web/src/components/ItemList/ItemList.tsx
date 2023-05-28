@@ -1,16 +1,10 @@
 import React from "react";
 import { Item } from "../Item";
 import "./ItemList.css";
-
-interface Item {
-  id: number;
-  name: string;
-  price: number;
-  category_name: string;
-}
+import { Item as ItemInterface } from "../../common/interfaces";
 
 interface Prop {
-  items: Item[];
+  items: ItemInterface[];
 }
 
 export const ItemList: React.FC<Prop> = (props) => {

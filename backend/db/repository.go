@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -131,7 +133,14 @@ func (r *ItemDBRepository) GetItem(ctx context.Context, id int32) (domain.Item, 
 func (r *ItemDBRepository) GetItemImage(ctx context.Context, id int32) ([]byte, error) {
 	row := r.QueryRowContext(ctx, "SELECT image FROM items WHERE id = ?", id)
 	var image []byte
-	return image, row.Scan(&image)
+	if err := row.Scan(&image); err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("Image data: %v\n", image)
+	log.Printf("Image data: %v\n", image)
+
+	return image, nil
 }
 
 func (r *ItemDBRepository) GetOnSaleItems(ctx context.Context) ([]domain.Item, error) {

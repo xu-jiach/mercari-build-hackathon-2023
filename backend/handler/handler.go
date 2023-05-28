@@ -241,8 +241,6 @@ func (h *Handler) Login(c echo.Context) error {
 }
 
 func (h *Handler) AddItem(c echo.Context) error {
-	// TODO: validation
-	// http.StatusBadRequest(400)
 	ctx := c.Request().Context()
 
 	req := new(addItemRequest)
@@ -254,6 +252,7 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
+
 	file, err := c.FormFile("image")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -266,21 +265,17 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if file.Size == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
 	}
-	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
-	// }
 	if req.Price <= 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
 	}
+	// validation
 	// if req.Name == "" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
-	// }
-	// if req.CategoryID <= 0 {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
 	// }
 	// if req.Description == "" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
 	// }
+	// end of validation
 	// end of validation
 
 	src, err := file.Open()
@@ -291,19 +286,33 @@ func (h *Handler) AddItem(c echo.Context) error {
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
-	// TODO: pass very big file
-	// http.StatusBadRequest(400)
 
-	if _, err := io.Copy(blob, src); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// separate the copy operation into a goroutine
+	errCh := make(chan error)
 
-	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusBadRequest, "category does not exist")
+	go func() {
+		if _, err := io.Copy(blob, src); err != nil {
+			errCh <- err
 		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		close(errCh)
+	}()
+
+	// Check if the category exists
+	categoryCh := make(chan error)
+	go func() {
+		_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				categoryCh <- errors.New("Category does not exist")
+			}
+			categoryCh <- err
+		}
+		close(categoryCh)
+	}()
+
+	// We must ensure the copy operation has finished before we can use the blob
+	if err = <-errCh; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("copy operation failed: %v", err))
 	}
 
 	item, err := h.ItemRepo.AddItem(c.Request().Context(), domain.Item{
@@ -327,26 +336,30 @@ func (h *Handler) EditItem(c echo.Context) error {
 
 	req := new(editItemRequest)
 	if err := c.Bind(req); err != nil {
+		log.Println("Failed to bind request: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	itemIdParam := c.Param("itemID")
-	log.Println("itemIdParam:", itemIdParam)
 	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
 	if err != nil {
+		log.Println("Invalid item ID: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
 	}
 
-	// getUserID
 	userID, err := getUserID(c)
 	if err != nil {
+		log.Println("Failed to get user ID: ", err)
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
 	req.ID = int32(itemId)
-	// Check if the user is the owner of the item
 	existingItem, err := h.ItemRepo.GetItem(ctx, req.ID)
 	if err != nil {
+		log.Println("Failed to get item: ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return echo.NewHTTPError(http.StatusNotFound, "Item not found")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -387,20 +400,40 @@ func (h *Handler) EditItem(c echo.Context) error {
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
 
-	if _, err := io.Copy(blob, src); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// separate the copy operation into a goroutine
+	errCh := make(chan error)
+
+	go func() {
+		if _, err := io.Copy(blob, src); err != nil {
+			errCh <- err
+		}
+		close(errCh)
+	}()
 
 	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
 	// }
+
 	// Check if the category exists
-	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
-	if err != nil {
-		if err != sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusBadRequest, "Category does not exist")
+	//
+	categoryCh := make(chan error)
+	go func() {
+		_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				categoryCh <- errors.New("Category does not exist")
+			}
+			categoryCh <- err
 		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		close(categoryCh)
+	}()
+
+	if err = <-errCh; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to copy image file")
+	}
+
+	if err = <-categoryCh; err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	item, err := h.ItemRepo.EditItem(c.Request().Context(), domain.Item{
@@ -414,12 +447,12 @@ func (h *Handler) EditItem(c echo.Context) error {
 		Status:      domain.ItemStatusInitial,
 	})
 	if err != nil {
+		log.Println("Failed to edit item: ", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	return c.JSON(http.StatusOK, editItemResponse{ID: int64(item.ID)})
 }
-
 func (h *Handler) Sell(c echo.Context) error {
 	ctx := c.Request().Context()
 	req := new(sellRequest)
@@ -598,7 +631,8 @@ func (h *Handler) GetImage(c echo.Context) error {
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
+	fmt.Printf("data: %v\n", data)
+	log.Printf("Image data: %v\n", data)
 	contentType := http.DetectContentType(data)
 
 	return c.Blob(http.StatusOK, contentType, data)
@@ -668,7 +702,7 @@ func (h *Handler) Purchase(c echo.Context) error {
 
 	// Return error if the itemID is out of range
 	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
-	if err != nil || itemID > math.MaxInt32 || itemID < math.MinInt32 {
+	if err != nil || itemID > math.MaxInt32 || itemID < 0 {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
 	}
@@ -719,11 +753,6 @@ func (h *Handler) Purchase(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
 	}
 
-	if err := h.ItemRepo.UpdateItemStatus(ctx, int32(itemID), domain.ItemStatusSoldOut); err != nil {
-		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
-	}
-
 	if err := h.UserRepo.UpdateBalance(ctx, userID, user.Balance-item.Price); err != nil {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
@@ -758,13 +787,15 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	keyword := c.QueryParam("name")
 	if keyword == "" {
 		// Keyword is required
+		c.Logger().Error("Keyword is required")
 		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
 	}
 
 	// Call your repository method
 	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
 	// return the response
@@ -772,11 +803,53 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	for _, item := range items {
 		cats, err := h.ItemRepo.GetCategories(ctx)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err)
+			c.Logger().Error(err)
+			return c.JSON(http.StatusInternalServerError, "Internal server error")
 		}
 		for _, cat := range cats {
 			if cat.ID == item.CategoryID {
 				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// SearchItemAndInfoByKeyword Almost equivalent to SearchItemByKeyword.
+// Returns []getItemResponse
+// Kurumi created this not to disturb the bench test.
+func (h *Handler) SearchItemAndInfoByKeyword(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Retrieve the keyword from query parameters
+	keyword := c.QueryParam("name")
+	if keyword == "" {
+		// Keyword is required
+		c.Logger().Error("Keyword is required")
+		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
+	}
+
+	// Call your repository method
+	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
+	if err != nil {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	// return the response
+	var res []getItemResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			c.Logger().Error(err)
+			return c.JSON(http.StatusInternalServerError, "Internal server error")
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getItemResponse{ID: item.ID, Name: item.Name, CategoryID: item.CategoryID,
+					CategoryName: cat.Name, Price: item.Price,
+					Description: item.Description, Status: item.Status})
 			}
 		}
 	}
