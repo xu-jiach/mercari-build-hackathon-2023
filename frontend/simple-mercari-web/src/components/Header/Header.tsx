@@ -45,9 +45,15 @@ export const Header: React.FC = () => {
             // vertical padding + font size from searchIcon
             paddingLeft: `calc(1em + ${theme.spacing(4)})`,
             transition: theme.transitions.create('width'),
-            width: '100%',
-            [theme.breakpoints.up('md')]: {
-                width: '35ch',
+            width: '35ch',
+            [theme.breakpoints.down('md')]: {
+                width: '23ch',
+            },
+            [theme.breakpoints.down('sm')]: {
+                width: '10ch',
+                '&::placeholder': {
+                    textOverflow: 'ellipsis !important',
+                }
             },
         },
     }));

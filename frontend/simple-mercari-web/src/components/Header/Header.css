@@ -1,7 +1,7 @@
 header {
   display: flex;
   flex-direction: row;
-  margin: 1em;
+  margin: 0.5em;
 }
 
 .LogoutButtonContainer {
