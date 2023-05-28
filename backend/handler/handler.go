@@ -835,3 +835,36 @@ func (h *Handler) AddCategory(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
 }
+
+//search by category api
+func (h *Handler) GetItemsByCategory(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// get category id
+	categoryID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		// Invalid category ID
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid category ID")
+	}
+
+	// repo call
+	items, err := h.ItemRepo.GetItemsByCategory(ctx, categoryID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	var res []getUserItemsResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
