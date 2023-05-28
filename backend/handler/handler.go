@@ -403,6 +403,11 @@ func (h *Handler) EditItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
+
+	// Check if the filename contains any special characters
+	if strings.ContainsAny(file.Filename, "/?!") {
+		return echo.NewHTTPError(http.StatusBadRequest, "filename contains invalid characters")
+	}
 	// validation
 	// if req.Price <= 0 {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
@@ -431,23 +436,23 @@ func (h *Handler) EditItem(c echo.Context) error {
 
 	// check the file type
 	// Read the first 512 bytes to determine the file type
-	buffer := make([]byte, 512)
-	_, err = src.Read(buffer)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// buffer := make([]byte, 512)
+	// _, err = src.Read(buffer)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
 
-	// Reset the reader back to the start of the file
-	_, err = src.Seek(0, io.SeekStart)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// // Reset the reader back to the start of the file
+	// _, err = src.Seek(0, io.SeekStart)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
 
-	// Detect the content type of the file
-	contentType := http.DetectContentType(buffer)
-	if !strings.HasPrefix(contentType, "image/") {
-		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
-	}
+	// // Detect the content type of the file
+	// contentType := http.DetectContentType(buffer)
+	// if !strings.HasPrefix(contentType, "image/") {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	// }
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
