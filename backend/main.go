@@ -70,9 +70,10 @@ func run(ctx context.Context) int {
 	defer sqlDB.Close()
 
 	h := handler.Handler{
-		DB:       sqlDB,
-		UserRepo: db.NewUserRepository(sqlDB),
-		ItemRepo: db.NewItemRepository(sqlDB),
+		DB:                 sqlDB,
+		UserRepo:           db.NewUserRepository(sqlDB),
+		ItemRepo:           db.NewItemRepository(sqlDB),
+		OnsitePurchaseRepo: db.NewOnsitePurchaseRepository(sqlDB),
 	}
 
 	// Routes
@@ -93,9 +94,11 @@ func run(ctx context.Context) int {
 	l.Use(echojwt.WithConfig(config))
 	l.GET("/users/:userID/items", h.GetUserItems)
 	l.POST("/items", h.AddItem)
+	l.POST("/items/:itemID/pass", h.GetItemPassword)
 	l.PUT("/items/:itemID", h.EditItem)
 	l.POST("/sell", h.Sell)
 	l.POST("/purchase/:itemID", h.Purchase)
+	l.POST("/onsite-purchase", h.OnsitePurchase)
 	l.GET("/balance", h.GetBalance)
 	l.POST("/balance", h.AddBalance)
 	l.POST("/categories", h.AddCategory)
