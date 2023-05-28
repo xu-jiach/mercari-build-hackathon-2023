@@ -9,9 +9,33 @@ import {Toolbar} from "@mui/material";
 import {useCookies} from "react-cookie";
 import {useNavigate} from "react-router-dom";
 import Avatar from '@mui/material/Avatar';
+import Stack from '@mui/material/Stack';
+
+// auto generates icons based on user name
+
+
+function stringAvatar(character: string) {
+  const name = character.length > 1 ? character : `${character}${character}`;
+  const colors = ['#06CBFF', '#FF5757'];
+  const randomIndex = Math.floor(Math.random() * colors.length);
+  const color = colors[randomIndex];
+
+  const avatarSx = {
+    bgcolor: color,
+    cursor: 'pointer', // Add the cursor property here
+  };
+
+  return {
+    sx: avatarSx,
+    children: name,
+  };
+}
+
+
+
 
 export const Header: React.FC = () => {
-    const [cookies] = useCookies(["userID", "token"]);
+    const [cookies] = useCookies(["userID", "token"])
     const navigate = useNavigate();
 
     const Search = styled('div')(({ theme }) => ({
@@ -85,24 +109,27 @@ export const Header: React.FC = () => {
               {cookies.token &&
                 <>
                   <Search>
-                        <SearchIconWrapper>
-                            <SearchIcon />
-                        </SearchIconWrapper>
-                        <StyledInputBase
-                            placeholder="Shop one-of-a-kind finds"
-                            inputProps={{ 'aria-label': 'search' }}
-                            onKeyDown={handleKeyDown}
-                            // TODO: Display suggestions when user types
-                            // onChange={onChangeSuggestion}
-                        />
-                    </Search>
-                    <div className="cur-user-icon">
-                      <p>bob</p>
-                    </div>
+                    <SearchIconWrapper>
+                        <SearchIcon />
+                    </SearchIconWrapper>
+                    <StyledInputBase
+                        placeholder="Shop one-of-a-kind finds"
+                        inputProps={{ 'aria-label': 'search' }}
+                        onKeyDown={handleKeyDown}
+                        // TODO: Display suggestions when user types
+                        // onChange={onChangeSuggestion}
+                    />
+                  </Search>
                 </>
-
               }
           </Toolbar>
+          {cookies.token &&
+            <Stack sx={{ pr: 5, mt: 1.5 }}>
+              <Avatar {...stringAvatar(cookies.userID)}
+                onClick={() => navigate(`/user/${cookies.userID}`)}
+              />
+            </Stack>
+          }
       </header>
     </>
   );

@@ -75,8 +75,61 @@ button, input[type="submit"], input[type="reset"] {
   opacity: 100%;
   border-bottom: solid #06CBFF .25em;
 }
+.wallet-balance{
+   background: linear-gradient(
+    to right,
+    hsl(208, 21%, 95%),
+    hsl(136, 41%, 95%),
+    hsl(40, 43%, 95%)
+  );
+  height: 10em;
+  width: 40vw;
+  padding: 2em;
+  border-radius: 16px;
+  margin: 0 auto;
+}
+
+.deposit {
+  color: #04C5AB;
+}
+
+.purchase {
+  color:#FF5757;
+}
+
+/* .wallet-balance{
+  background: linear-gradient(
+    to right,
+    hsl(61, 21%, 95%),
+    hsl(213, 41%, 95%),
+    hsl(146, 43%, 95%)
+  );
+  height: 10em;
+  padding: 2em;
+  border-radius: 5px;
+} */
 
 
+.balance-display {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+}
+
+
+.UserProfile{
+  width: 70vw;
+}
+
+
+.transaction-unit {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-weight: bold;
+  border-bottom: 1px solid grey;
+}
 /* default values */
 
 /* .MerComponent {
