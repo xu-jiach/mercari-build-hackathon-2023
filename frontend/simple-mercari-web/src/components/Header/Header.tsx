@@ -8,6 +8,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import {Toolbar} from "@mui/material";
 import {useCookies} from "react-cookie";
 import {useNavigate} from "react-router-dom";
+import Avatar from '@mui/material/Avatar';
 
 export const Header: React.FC = () => {
     const [cookies] = useCookies(["userID", "token"]);
@@ -64,7 +65,7 @@ export const Header: React.FC = () => {
         e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>, search: string
     ) => {
         e.preventDefault();
-        navigate(`/search?keyword=${search}`);
+        navigate(`/search-advanced?keyword=${search}`);
         window.location.reload();
     }
 
@@ -79,21 +80,27 @@ export const Header: React.FC = () => {
       <header>
           <Toolbar>
               <div>
-                  <img className="logo" src={logo} alt="logo" />
+                  <img className="logo" src={logo} alt="logo" onClick={() => navigate('/')} />
               </div>
               {cookies.token &&
+                <>
                   <Search>
-                      <SearchIconWrapper>
-                          <SearchIcon />
-                      </SearchIconWrapper>
-                      <StyledInputBase
-                          placeholder="Shop one-of-a-kind finds"
-                          inputProps={{ 'aria-label': 'search' }}
-                          onKeyDown={handleKeyDown}
-                          // TODO: Display suggestions when user types
-                          // onChange={onChangeSuggestion}
-                      />
-                  </Search>
+                        <SearchIconWrapper>
+                            <SearchIcon />
+                        </SearchIconWrapper>
+                        <StyledInputBase
+                            placeholder="Shop one-of-a-kind finds"
+                            inputProps={{ 'aria-label': 'search' }}
+                            onKeyDown={handleKeyDown}
+                            // TODO: Display suggestions when user types
+                            // onChange={onChangeSuggestion}
+                        />
+                    </Search>
+                    <div className="cur-user-icon">
+                      <p>bob</p>
+                    </div>
+                </>
+
               }
           </Toolbar>
       </header>
