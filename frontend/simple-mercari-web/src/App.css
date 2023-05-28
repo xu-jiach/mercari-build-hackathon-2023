@@ -30,10 +30,53 @@
   display: flex;
   justify-content: center;
 }
+form {
+  display: flex;
+}
+
 .Listing .listing-form {
   display: flex;
   flex-direction: column;
+  width: 25em;
 }
+
+.mt1 {
+  margin-top: .5em;
+}
+
+.categories-container{
+  display: flex;
+  justify-content: center;
+}
+.category-icon{
+  height: 4em;
+  width: 5em;
+  margin: 1em;
+  padding: .5em;
+  text-align: center;
+  opacity: 65%;
+}
+
+button, input[type="submit"], input[type="reset"] {
+	background: none;
+	color: inherit;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+	outline: inherit;
+}
+
+.category-icon:hover{
+  opacity: 85%;
+}
+
+.category-icon:focus{
+  opacity: 100%;
+  border-bottom: solid #06CBFF .25em;
+}
+
+
 /* default values */
 
 /* .MerComponent {

@@ -845,13 +845,15 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	keyword := c.QueryParam("name")
 	if keyword == "" {
 		// Keyword is required
+		c.Logger().Error("Keyword is required")
 		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
 	}
 
 	// Call your repository method
 	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
 	// return the response
@@ -859,11 +861,53 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	for _, item := range items {
 		cats, err := h.ItemRepo.GetCategories(ctx)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err)
+			c.Logger().Error(err)
+			return c.JSON(http.StatusInternalServerError, "Internal server error")
 		}
 		for _, cat := range cats {
 			if cat.ID == item.CategoryID {
 				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// SearchItemAndInfoByKeyword Almost equivalent to SearchItemByKeyword.
+// Returns []getItemResponse
+// Kurumi created this not to disturb the bench test.
+func (h *Handler) SearchItemAndInfoByKeyword(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Retrieve the keyword from query parameters
+	keyword := c.QueryParam("name")
+	if keyword == "" {
+		// Keyword is required
+		c.Logger().Error("Keyword is required")
+		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
+	}
+
+	// Call your repository method
+	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
+	if err != nil {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	// return the response
+	var res []getItemResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			c.Logger().Error(err)
+			return c.JSON(http.StatusInternalServerError, "Internal server error")
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getItemResponse{ID: item.ID, Name: item.Name, CategoryID: item.CategoryID,
+					CategoryName: cat.Name, Price: item.Price,
+					Description: item.Description, Status: item.Status})
 			}
 		}
 	}
@@ -923,45 +967,36 @@ func (h *Handler) AddCategory(c echo.Context) error {
 	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
 }
 
-// // GPT 3 API
-// func generateDescriptionWithGPT3(name string, categoryID int) (string, error) {
-// 	// Set up the request body
-// 	body := GPT3Request{
-// 		Prompt:    fmt.Sprintf("Generate a 20-word description for a product named '%s' in category %d", name, categoryID),
-// 		MaxTokens: 20,
-// 	}
 
-// 	// Convert the body to JSON
-// 	jsonBody, err := json.Marshal(body)
-// 	if err != nil {
-// 		return "", err
-// 	}
+//search by category api
+func (h *Handler) GetItemsByCategory(c echo.Context) error {
+	ctx := c.Request().Context()
 
-// 	// Set up the HTTP request
-// 	req, err := http.NewRequest("POST", "https://api.openai.com/v1/engines/davinci-codex/completions", bytes.NewBuffer(jsonBody))
-// 	if err != nil {
-// 		return "", err
-// 	}
+	// get category id
+	categoryID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		// Invalid category ID
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid category ID")
+	}
 
-// 	// Add the necessary headers
-// 	req.Header.Add("Content-Type", "application/json")
-// 	req.Header.Add("Authorization", "Bearer Your-OpenAI-API-Key")
+	// repo call
+	items, err := h.ItemRepo.GetItemsByCategory(ctx, categoryID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 
-// 	// Send the HTTP request
-// 	client := &http.Client{}
-// 	resp, err := client.Do(req)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer resp.Body.Close()
+	var res []getUserItemsResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
 
-// 	// Read and decode the HTTP response
-// 	bodyBytes, _ := io.ReadAll(resp.Body)
-// 	var response GPT3Response
-// 	if err := json.Unmarshal(bodyBytes, &response); err != nil {
-// 		return "", err
-// 	}
-
-// 	// Use the text from the first choice
-// 	return response.Choices[0].Text, nil
-// }
+	return c.JSON(http.StatusOK, res)
+}
