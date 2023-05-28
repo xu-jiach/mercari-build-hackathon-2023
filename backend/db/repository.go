@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -281,6 +282,7 @@ func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID in
 
 type OnsitePurchaseRepository interface {
 	AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) error
+	ValidatePassword(ctx context.Context, itemID int64, password string) (bool, error)
 }
 
 type OnsitePurchaseDBRepository struct {
@@ -306,4 +308,24 @@ func (r *OnsitePurchaseDBRepository) AddOnsitePurchase(ctx context.Context, purc
 	}
 
 	return nil
+}
+
+func (r *OnsitePurchaseDBRepository) ValidatePassword(ctx context.Context, itemID int64, password string) (bool, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return false, err
+	}
+
+	row := r.QueryRowContext(ctx, "SELECT * FROM onsite_purchase WHERE item_id = ?", itemID)
+
+	var purchase domain.OnsitePurchase
+	if err := row.Scan(&purchase.ID, &purchase.ItemID, &purchase.SellerID, &purchase.Password); err != nil {
+		return false, err
+	}
+
+	if purchase.Password == string(hash) {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
