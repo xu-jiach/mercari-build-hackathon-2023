@@ -24,10 +24,10 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
                 user_id: Number(cookies.userID),
             }),
         })
-            .then((_) => window.location.reload())
+            .then(() => window.location.reload())
             .catch((err) => {
                 console.log(`POST error:`, err);
-                toast.error("Error: " + err.status);
+                toast.error("Error: " + err.message);
             });
     };
 
@@ -38,9 +38,9 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
             <Chip label={item.category_name} component="a" /> {/* TODO: Navigate to category view on clicking */}
 
             {item.status == ItemStatus.ItemStatusSoldOut ? (
-                <button disabled={true} onClick={onSubmit} id="MerDisableButton">
+                <Button disabled={true} onClick={onSubmit} id="MerDisableButton">
                     SoldOut
-                </button>
+                </Button>
             ) : (
                 <>
                     {isOwner && (
