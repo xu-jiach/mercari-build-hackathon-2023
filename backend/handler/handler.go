@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net/http"
 	"os"
@@ -260,15 +259,15 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 
 	// validation
-	if file.Size > 1<<20 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
-	}
-	if file.Size == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
-	}
-	if req.Price <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
-	}
+	// if file.Size > 1<<20 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	// }
+	// if file.Size == 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
+	// }
+	// if req.Price <= 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	// }
 	// validation
 	// if req.Name == "" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
@@ -357,27 +356,23 @@ func (h *Handler) EditItem(c echo.Context) error {
 
 	req := new(editItemRequest)
 	if err := c.Bind(req); err != nil {
-		log.Println("Failed to bind request: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	itemIdParam := c.Param("itemID")
 	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
 	if err != nil {
-		log.Println("Invalid item ID: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
 	}
 
 	userID, err := getUserID(c)
 	if err != nil {
-		log.Println("Failed to get user ID: ", err)
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
 	req.ID = int32(itemId)
 	existingItem, err := h.ItemRepo.GetItem(ctx, req.ID)
 	if err != nil {
-		log.Println("Failed to get item: ", err)
 		if errors.Is(err, sql.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "Item not found")
 		}
@@ -393,9 +388,9 @@ func (h *Handler) EditItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	// validation
-	if req.Price <= 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
-	}
+	// if req.Price <= 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	// }
 	// if req.Name == "" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
 	// }
@@ -405,12 +400,12 @@ func (h *Handler) EditItem(c echo.Context) error {
 	// end of validation
 
 	// validation
-	if file.Size > 1<<20 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
-	}
-	if file.Size == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
-	}
+	// if file.Size > 1<<20 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	// }
+	// if file.Size == 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
+	// }
 
 	src, err := file.Open()
 	if err != nil {
@@ -488,7 +483,6 @@ func (h *Handler) EditItem(c echo.Context) error {
 		Status:      domain.ItemStatusInitial,
 	})
 	if err != nil {
-		log.Println("Failed to edit item: ", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
@@ -672,8 +666,7 @@ func (h *Handler) GetImage(c echo.Context) error {
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-	fmt.Printf("data: %v\n", data)
-	log.Printf("Image data: %v\n", data)
+
 	contentType := http.DetectContentType(data)
 
 	return c.Blob(http.StatusOK, contentType, data)
