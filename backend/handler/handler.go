@@ -330,122 +330,122 @@ func (h *Handler) AddItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, addItemResponse{ID: int64(item.ID)})
 }
 
-// func (h *Handler) EditItem(c echo.Context) error {
-// 	ctx := c.Request().Context()
+func (h *Handler) EditItem(c echo.Context) error {
+	ctx := c.Request().Context()
 
-// 	req := new(editItemRequest)
-// 	if err := c.Bind(req); err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, err)
-// 	}
+	req := new(editItemRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
 
-// 	itemIdParam := c.Param("itemID")
-// 	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
-// 	if err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
-// 	}
+	itemIdParam := c.Param("itemID")
+	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
+	}
 
-// 	// getUserID
-// 	userID, err := getUserID(c)
-// 	if err != nil {
-// 		return echo.NewHTTPError(http.StatusUnauthorized, err)
-// 	}
+	// getUserID
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, err)
+	}
 
-// 	req.ID = int32(itemId)
-// 	// Check if the user is the owner of the item
-// 	existingItem, err := h.ItemRepo.GetItem(ctx, req.ID)
-// 	if err != nil {
-// 		return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 	}
+	req.ID = int32(itemId)
+	// Check if the user is the owner of the item
+	existingItem, err := h.ItemRepo.GetItem(ctx, req.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-// 	if existingItem.UserID != userID {
-// 		return echo.NewHTTPError(http.StatusUnauthorized, "User is not the owner of the item")
-// 	}
+	if existingItem.UserID != userID {
+		return echo.NewHTTPError(http.StatusUnauthorized, "User is not the owner of the item")
+	}
 
-// 	file, err := c.FormFile("image")
-// 	if err != nil {
-// 		return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 	}
-// 	// validation
-// 	if req.Price <= 0 {
-// 		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
-// 	}
-// 	// if req.Name == "" {
-// 	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
-// 	// }
-// 	// if req.Description == "" {
-// 	// 	return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
-// 	// }
-// 	// end of validation
+	file, err := c.FormFile("image")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	// validation
+	if req.Price <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
+	}
+	// if req.Name == "" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
+	// }
+	// if req.Description == "" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
+	// }
+	// end of validation
 
-// 	// validation
-// 	if file.Size > 1<<20 {
-// 		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
-// 	}
-// 	if file.Size == 0 {
-// 		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
-// 	}
+	// validation
+	if file.Size > 1<<20 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image size must be less than 1MB")
+	}
+	if file.Size == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
+	}
 
-// 	src, err := file.Open()
-// 	if err != nil {
-// 		return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 	}
-// 	defer src.Close()
+	src, err := file.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	defer src.Close()
 
-// 	var dest []byte
-// 	blob := bytes.NewBuffer(dest)
+	var dest []byte
+	blob := bytes.NewBuffer(dest)
 
-// 	// separate the copy operation into a goroutine
-// 	errCh := make(chan error)
+	// separate the copy operation into a goroutine
+	errCh := make(chan error)
 
-// 	go func() {
-// 		if _, err := io.Copy(blob, src); err != nil {
-// 			errCh <- err
-// 		}
-// 		close(errCh)
-// 	}()
+	go func() {
+		if _, err := io.Copy(blob, src); err != nil {
+			errCh <- err
+		}
+		close(errCh)
+	}()
 
-// 	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
-// 	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
-// 	// }
+	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
+	// }
 
-// 	// Check if the category exists
-// 	//
-// 	categoryCh := make(chan error)
-// 	go func() {
-// 		_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
-// 		if err != nil {
-// 			if err == sql.ErrNoRows {
-// 				categoryCh <- errors.New("Category does not exist")
-// 			}
-// 			categoryCh <- err
-// 		}
-// 		close(categoryCh)
-// 	}()
+	// Check if the category exists
+	//
+	categoryCh := make(chan error)
+	go func() {
+		_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				categoryCh <- errors.New("Category does not exist")
+			}
+			categoryCh <- err
+		}
+		close(categoryCh)
+	}()
 
-// 	if err = <-errCh; err != nil {
-// 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to copy image file")
-// 	}
+	if err = <-errCh; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to copy image file")
+	}
 
-// 	if err = <-categoryCh; err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-// 	}
+	if err = <-categoryCh; err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
 
-// 	item, err := h.ItemRepo.EditItem(c.Request().Context(), domain.Item{
-// 		ID:          req.ID,
-// 		Name:        req.Name,
-// 		CategoryID:  req.CategoryID,
-// 		UserID:      userID,
-// 		Price:       req.Price,
-// 		Description: req.Description,
-// 		Image:       blob.Bytes(),
-// 		Status:      domain.ItemStatusInitial,
-// 	})
-// 	if err != nil {
-// 		return echo.NewHTTPError(http.StatusInternalServerError, err)
-// 	}
+	item, err := h.ItemRepo.EditItem(c.Request().Context(), domain.Item{
+		ID:          req.ID,
+		Name:        req.Name,
+		CategoryID:  req.CategoryID,
+		UserID:      userID,
+		Price:       req.Price,
+		Description: req.Description,
+		Image:       blob.Bytes(),
+		Status:      domain.ItemStatusInitial,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-//		return c.JSON(http.StatusOK, editItemResponse{ID: int64(item.ID)})
-//	}
+	return c.JSON(http.StatusOK, editItemResponse{ID: int64(item.ID)})
+}
 func (h *Handler) Sell(c echo.Context) error {
 	ctx := c.Request().Context()
 	req := new(sellRequest)
