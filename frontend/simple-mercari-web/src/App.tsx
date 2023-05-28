@@ -10,6 +10,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme';
+import { Search } from "./components/Search";
 
 export const App: React.VFC = () => {
   return (
@@ -23,6 +24,7 @@ export const App: React.VFC = () => {
             <Route index element={<Home />} />
             <Route path="/item/:id" element={<ItemDetail />} />
             <Route path="/user/:id" element={<UserProfile />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/sell" element={<Listing />} />
             <Route path="/edit-item/:itemId" element={<Listing />} />
           </Routes>

@@ -779,13 +779,15 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	keyword := c.QueryParam("name")
 	if keyword == "" {
 		// Keyword is required
+		c.Logger().Error("Keyword is required")
 		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
 	}
 
 	// Call your repository method
 	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	    c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
 	// return the response
@@ -793,7 +795,8 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	for _, item := range items {
 		cats, err := h.ItemRepo.GetCategories(ctx)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err)
+		    c.Logger().Error(err)
+			return c.JSON(http.StatusInternalServerError, "Internal server error")
 		}
 		for _, cat := range cats {
 			if cat.ID == item.CategoryID {
