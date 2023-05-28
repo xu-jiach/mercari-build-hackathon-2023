@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net/http"
 	"os"
@@ -241,8 +240,6 @@ func (h *Handler) Login(c echo.Context) error {
 }
 
 func (h *Handler) AddItem(c echo.Context) error {
-	// TODO: validation
-	// http.StatusBadRequest(400)
 	ctx := c.Request().Context()
 
 	req := new(addItemRequest)
@@ -254,6 +251,7 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
+
 	file, err := c.FormFile("image")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -266,21 +264,17 @@ func (h *Handler) AddItem(c echo.Context) error {
 	if file.Size == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "image must not be empty")
 	}
-	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
-	// }
 	if req.Price <= 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "price must be greater than 0")
 	}
+	// validation
 	// if req.Name == "" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "name must not be empty")
-	// }
-	// if req.CategoryID <= 0 {
-	// 	return echo.NewHTTPError(http.StatusBadRequest, "categoryID must be greater than 0")
 	// }
 	// if req.Description == "" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "description must not be empty")
 	// }
+	// end of validation
 	// end of validation
 
 	src, err := file.Open()
@@ -291,19 +285,33 @@ func (h *Handler) AddItem(c echo.Context) error {
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
-	// TODO: pass very big file
-	// http.StatusBadRequest(400)
 
-	if _, err := io.Copy(blob, src); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// separate the copy operation into a goroutine
+	errCh := make(chan error)
 
-	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusBadRequest, "category does not exist")
+	go func() {
+		if _, err := io.Copy(blob, src); err != nil {
+			errCh <- err
 		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		close(errCh)
+	}()
+
+	// Check if the category exists
+	categoryCh := make(chan error)
+	go func() {
+		_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				categoryCh <- errors.New("Category does not exist")
+			}
+			categoryCh <- err
+		}
+		close(categoryCh)
+	}()
+
+	// We must ensure the copy operation has finished before we can use the blob
+	if err = <-errCh; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("copy operation failed: %v", err))
 	}
 
 	item, err := h.ItemRepo.AddItem(c.Request().Context(), domain.Item{
@@ -331,7 +339,6 @@ func (h *Handler) EditItem(c echo.Context) error {
 	}
 
 	itemIdParam := c.Param("itemID")
-	log.Println("itemIdParam:", itemIdParam)
 	itemId, err := strconv.ParseInt(itemIdParam, 10, 64)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid item ID")
@@ -387,20 +394,40 @@ func (h *Handler) EditItem(c echo.Context) error {
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
 
-	if _, err := io.Copy(blob, src); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// separate the copy operation into a goroutine
+	errCh := make(chan error)
+
+	go func() {
+		if _, err := io.Copy(blob, src); err != nil {
+			errCh <- err
+		}
+		close(errCh)
+	}()
 
 	// if file.Header.Get("Content-Type") != "image/png" && file.Header.Get("Content-Type") != "image/jpeg" {
 	// 	return echo.NewHTTPError(http.StatusBadRequest, "image must be png or jpeg")
 	// }
+
 	// Check if the category exists
-	_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
-	if err != nil {
-		if err != sql.ErrNoRows {
-			return echo.NewHTTPError(http.StatusBadRequest, "Category does not exist")
+	//
+	categoryCh := make(chan error)
+	go func() {
+		_, err = h.ItemRepo.GetCategory(ctx, req.CategoryID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				categoryCh <- errors.New("Category does not exist")
+			}
+			categoryCh <- err
 		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		close(categoryCh)
+	}()
+
+	if err = <-errCh; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to copy image file")
+	}
+
+	if err = <-categoryCh; err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	item, err := h.ItemRepo.EditItem(c.Request().Context(), domain.Item{
@@ -419,7 +446,6 @@ func (h *Handler) EditItem(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, editItemResponse{ID: int64(item.ID)})
 }
-
 func (h *Handler) Sell(c echo.Context) error {
 	ctx := c.Request().Context()
 	req := new(sellRequest)
