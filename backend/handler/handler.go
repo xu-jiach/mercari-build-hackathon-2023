@@ -631,7 +631,8 @@ func (h *Handler) GetImage(c echo.Context) error {
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
+	fmt.Printf("data: %v\n", data)
+	log.Printf("Image data: %v\n", data)
 	contentType := http.DetectContentType(data)
 
 	return c.Blob(http.StatusOK, contentType, data)
