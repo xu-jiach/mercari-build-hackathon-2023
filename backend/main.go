@@ -86,9 +86,7 @@ func run(ctx context.Context) int {
 	e.POST("/register", h.Register)
 	e.POST("/login", h.Login)
 	e.GET("/search", h.SearchItemByKeyword)
-	//add the categories display page endpoint
-	e.GET("/categories/:id/items", h.GetItemsByCategory)
-
+	e.GET("/categories/:id/items", h.GetItemsByCategory) //add the categories display page endpoint
 	e.GET("/search-advanced", h.SearchItemAndInfoByKeyword)
 
 	// Login required
@@ -102,6 +100,7 @@ func run(ctx context.Context) int {
 	l.GET("/balance", h.GetBalance)
 	l.POST("/balance", h.AddBalance)
 	l.POST("/categories", h.AddCategory)
+	l.POST("/generateDescription", h.GenerateDescription)
 
 	// Start server
 	go func() {

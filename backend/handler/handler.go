@@ -5,6 +5,7 @@ package handler
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -144,6 +145,15 @@ type GPT3Response struct {
 		Text         string `json:"text"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
+}
+
+type generateDescriptionRequest struct {
+	Name       string `json:"name"`
+	CategoryID int    `json:"categoryID"`
+}
+
+type generateDescriptionResponse struct {
+	Description string `json:"description"`
 }
 
 type Handler struct {
@@ -300,25 +310,25 @@ func (h *Handler) AddItem(c echo.Context) error {
 	}
 	defer src.Close()
 
-	// check the file type
-	// Read the first 512 bytes to determine the file type
-	buffer := make([]byte, 512)
-	_, err = src.Read(buffer)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// // check the file type
+	// // Read the first 512 bytes to determine the file type
+	// buffer := make([]byte, 512)
+	// _, err = src.Read(buffer)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
 
-	// Reset the reader back to the start of the file
-	_, err = src.Seek(0, io.SeekStart)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
+	// // Reset the reader back to the start of the file
+	// _, err = src.Seek(0, io.SeekStart)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
 
-	// Detect the content type of the file
-	contentType := http.DetectContentType(buffer)
-	if !strings.HasPrefix(contentType, "image/") {
-		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
-	}
+	// // Detect the content type of the file
+	// contentType := http.DetectContentType(buffer)
+	// if !strings.HasPrefix(contentType, "image/") {
+	// 	return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	// }
 
 	var dest []byte
 	blob := bytes.NewBuffer(dest)
@@ -688,8 +698,10 @@ func (h *Handler) GetImage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	contentType := http.DetectContentType(data)
-
+	contentType := http.DetectContentType(data[:512])
+	if !strings.HasPrefix(contentType, "image/") {
+		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+	}
 	return c.Blob(http.StatusOK, contentType, data)
 }
 
@@ -966,6 +978,7 @@ func (h *Handler) AddCategory(c echo.Context) error {
 }
 
 // search by category api
+
 func (h *Handler) GetItemsByCategory(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -996,4 +1009,61 @@ func (h *Handler) GetItemsByCategory(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, res)
+}
+
+// GPT 3 API
+func generateDescriptionWithGPT3(name string, categoryID int) (string, error) {
+	// Set up the request body
+	body := GPT3Request{
+		Prompt:    fmt.Sprintf("Generate a 20-word description for a product named '%s' in category %d", name, categoryID),
+		MaxTokens: 20,
+	}
+
+	// Convert the body to JSON
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return "", err
+	}
+
+	// Set up the HTTP request
+	req, err := http.NewRequest("POST", "https://api.openai.com/v1/engines/davinci-codex/completions", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", err
+	}
+
+	// Add the necessary headers
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer Your-OpenAI-API-Key")
+
+	// Send the HTTP request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Read and decode the HTTP response
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	var response GPT3Response
+	if err := json.Unmarshal(bodyBytes, &response); err != nil {
+		return "", err
+	}
+
+	// Use the text from the first choice
+	return response.Choices[0].Text, nil
+}
+
+func (h *Handler) GenerateDescription(c echo.Context) error {
+	req := new(generateDescriptionRequest)
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	description, err := generateDescriptionWithGPT3(req.Name, req.CategoryID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, generateDescriptionResponse{Description: description})
 }

@@ -64,7 +64,7 @@ export const Header: React.FC = () => {
         e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>, search: string
     ) => {
         e.preventDefault();
-        navigate(`/search?keyword=${search}`);
+        navigate(`/search-advanced?keyword=${search}`);
         window.location.reload();
     }
 

@@ -1,13 +1,17 @@
 import { Item, ItemStatus } from "../../common/interfaces";
 import { useNavigate, useParams } from "react-router-dom";
-import React from "react";
+import React, { useEffect, useState, ReactNode, ChangeEvent} from "react";
 import { useCookies } from "react-cookie";
 import { fetcher } from "../../helper";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
-import { Chip } from "@mui/material";
+import { Chip, TextField, FormControlLabel, Checkbox } from "@mui/material";
+
+
 
 export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({item, isOwner}) => {
+    const [imWithSeller, setImWithSeller] = useState(false);
+
     const navigate = useNavigate();
     const [cookies] = useCookies(["token", "userID"]);
     const params = useParams();
@@ -44,16 +48,49 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
             ) : (
                 <>
                     {isOwner && (
+                      <>
                         <Button
                             onClick={() => navigate(`/edit-item/${item.id}`)} // Navigate to /edit-item/:itemId when the Edit button is clicked
                             id="MerButton"
                         >
                             Edit
                         </Button>
+                        {/* {inPersonPasscode &&(
+                          <p><strong>In person purchasing with passcode: #VW-4869</strong></p>
+                        )} */}
+                        <p><strong>In person purchasing with passcode: #VW-4869</strong></p>
+                      </>
                     )}
-                    <Button variant="contained" onClick={onSubmit} id="buy-now-btn" color="error" sx={{ mt: 3}}>
-                        Buy now
-                    </Button>
+                    <hr/>
+                    {!isOwner && (
+                      <>
+                        <Button variant="contained" onClick={onSubmit} id="buy-now-btn" color="primary" sx={{ mt: 3}}>
+                          Buy now
+                        </Button>
+                        {/**Also check here if in person passcode is enabled */}
+                        <FormControlLabel sx={{ mt: 3 }}
+                          control={
+                            <Checkbox
+                              checked={imWithSeller}
+                              onChange={(event) => setImWithSeller(event.target.checked)}
+                            />
+                          }
+                          label="I'm with the owner"
+                        />
+                        <TextField sx={{ mt: 2, ml: 3 }}
+                          id="inPersonKey"
+                          name="inPersonKey"
+                          //value={values.inPersonKey}
+                          //onChange={onValueChange}
+                          label="In Person Passcode"
+                          disabled={!imWithSeller}
+                        />
+                      </>
+                    )}
+
+
+
+
                 </>
             )}
 
