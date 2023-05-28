@@ -74,7 +74,6 @@ type ItemRepository interface {
 	GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) // for category search page
 }
 
-
 type ItemDBRepository struct {
 	*sql.DB
 }
@@ -279,4 +278,30 @@ func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID in
 		return nil, err
 	}
 	return items, nil
+}
+
+type OnsitePurchaseRepository interface {
+	AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) (domain.OnsitePurchase, error)
+}
+
+type OnsitePurchaseDBRepository struct {
+	*sql.DB
+}
+
+func (r *OnsitePurchaseDBRepository) AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) (domain.OnsitePurchase, error) {
+	var newPurchase domain.OnsitePurchase
+	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return domain.OnsitePurchase{}, err
+	}
+
+	if _, err := tx.ExecContext(ctx, "INSERT INTO onsite_purchase (item_id, seller_id, buyer_id, password) VALUES (?, ?, ?, ?)",
+		newPurchase.ItemId, newPurchase.SellerId, newPurchase.BuyerId, newPurchase.Password); err != nil {
+		tx.Rollback()
+		return domain.OnsitePurchase{}, echo.NewHTTPError(http.StatusConflict, err)
+	} else {
+		tx.Commit()
+	}
+
+	return newPurchase, nil
 }
