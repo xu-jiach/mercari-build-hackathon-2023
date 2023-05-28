@@ -700,7 +700,7 @@ func (h *Handler) GetImage(c echo.Context) error {
 
 	contentType := http.DetectContentType(data[:512])
 	if !strings.HasPrefix(contentType, "image/") {
-		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+		return echo.NewHTTPError(http.StatusNotFound, "uploaded file is not an image")
 	}
 	return c.Blob(http.StatusOK, contentType, data)
 }
