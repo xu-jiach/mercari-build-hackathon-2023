@@ -710,7 +710,7 @@ func (h *Handler) Purchase(c echo.Context) error {
 	// Check if user has enough balance
 	if user.Balance < item.Price {
 		c.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusPreconditionFailed, "You do not have enough balance.")
+		return echo.NewHTTPError(http.StatusPreconditionFailed, "Insufficient balance")
 	}
 
 	// Continue with the status update if the item is on sale and user has enough balance to finish the transactions.
