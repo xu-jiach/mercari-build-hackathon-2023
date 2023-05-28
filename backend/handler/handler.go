@@ -84,6 +84,7 @@ type addItemRequest struct {
 	CategoryID  int64  `form:"category_id"`
 	Price       int64  `form:"price"`
 	Description string `form:"description"`
+	Password    string `form:"password"`
 }
 
 type addItemResponse struct {
@@ -131,9 +132,10 @@ type addCategoryResponse struct {
 }
 
 type Handler struct {
-	DB       *sql.DB
-	UserRepo db.UserRepository
-	ItemRepo db.ItemRepository
+	DB                 *sql.DB
+	UserRepo           db.UserRepository
+	ItemRepo           db.ItemRepository
+	OnsitePurchaseRepo db.OnsitePurchaseRepository
 }
 
 func GetSecret() string {
@@ -343,6 +345,20 @@ func (h *Handler) AddItem(c echo.Context) error {
 		Description: req.Description,
 		Image:       blob.Bytes(),
 		Status:      domain.ItemStatusInitial,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	err = h.OnsitePurchaseRepo.AddOnsitePurchase(c.Request().Context(), domain.OnsitePurchase{
+		ItemID:   item.ID,
+		SellerID: userID,
+		Password: string(hash),
 	})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
@@ -943,7 +959,7 @@ func (h *Handler) AddCategory(c echo.Context) error {
 	return c.JSON(http.StatusOK, addCategoryResponse{ID: int64(category.ID)})
 }
 
-//search by category api
+// search by category api
 func (h *Handler) GetItemsByCategory(c echo.Context) error {
 	ctx := c.Request().Context()
 

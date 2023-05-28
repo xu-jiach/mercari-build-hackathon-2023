@@ -70,9 +70,10 @@ func run(ctx context.Context) int {
 	defer sqlDB.Close()
 
 	h := handler.Handler{
-		DB:       sqlDB,
-		UserRepo: db.NewUserRepository(sqlDB),
-		ItemRepo: db.NewItemRepository(sqlDB),
+		DB:                 sqlDB,
+		UserRepo:           db.NewUserRepository(sqlDB),
+		ItemRepo:           db.NewItemRepository(sqlDB),
+		OnsitePurchaseRepo: db.NewOnsitePurchaseRepository(sqlDB),
 	}
 
 	// Routes
