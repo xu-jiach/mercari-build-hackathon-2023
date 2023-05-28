@@ -3,13 +3,13 @@ import { Signup } from "../Signup";
 import { ItemList } from "../ItemList";
 import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
-import { Categories } from "../Categories";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
 import "react-toastify/dist/ReactToastify.css";
 import Divider from '@mui/material/Divider';
 import { styled } from '@mui/material/styles';
+import { Categories } from '../Categories/Categories';
 
 interface Item {
   id: number;
@@ -71,7 +71,7 @@ export const Home = () => {
 
   const itemListPage = (
     <>
-      <Categories/>
+      <Categories />
       <MerComponent>
         <div>
           <ItemList items={items} />

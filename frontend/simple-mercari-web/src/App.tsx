@@ -10,6 +10,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme';
+import { CategoryPage } from "./components/CategoryPage/CategoryPage";
 
 export const App: React.VFC = () => {
   return (
@@ -25,6 +26,7 @@ export const App: React.VFC = () => {
             <Route path="/user/:id" element={<UserProfile />} />
             <Route path="/sell" element={<Listing />} />
             <Route path="/edit-item/:itemId" element={<Listing />} />
+            <Route path="/categories/:id" element={<CategoryPage />} />
           </Routes>
         </div>
       </BrowserRouter>
