@@ -21,6 +21,7 @@ type formDataType = {
   price: number;
   description: string;
   image: string | File;
+  item_passcode: string;
 };
 
 export const Listing: React.FC = () => {
@@ -31,6 +32,7 @@ export const Listing: React.FC = () => {
     price: 0,
     description: "",
     image: "",
+    item_passcode: "",
   };
   const [values, setValues] = useState<formDataType>(initialState);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -128,12 +130,14 @@ export const Listing: React.FC = () => {
 
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+
       event.preventDefault();
       const data = new FormData();
       data.append("name", values.name);
       data.append("price", values.price.toString());
       data.append("description", values.description);
       data.append("image", values.image);
+      data.append("item_password", values.item_passcode);
   
       // // Now you can use the categoryName variable when calling your generateDescription endpoint:
       // const response = await fetch('/generatedescription', {
@@ -151,6 +155,9 @@ export const Listing: React.FC = () => {
       // // Append the generatedDescription to your FormData
       // data.append('description', generatedDescription);
   
+
+
+
 
   // If category_id is 0, create a new category and get its id
     if (values.category_id === 0) {
@@ -432,15 +439,14 @@ export const Listing: React.FC = () => {
                 />
               </Tooltip>
               <TextField
-                id="inPersonKey"
-                name="inPersonKey"
-                //value={values.inPersonKey}
+                id="item_passcode"
+                name="item_passcode"
+                value={values.item_passcode}
                 onChange={onValueChange}
                 label="In Person Passcode"
                 sx={{ mt: 3 }}
                 disabled={!allowInPersonPurchases}
               />
-
               <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
                 List
               </Button>
