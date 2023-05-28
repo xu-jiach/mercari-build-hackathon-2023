@@ -3,15 +3,9 @@ import { useCookies } from "react-cookie";
 import { useNavigate } from "react-router-dom";
 import { fetcherBlob } from "../../helper";
 import "./Item.css";
+import { Item as ItemInterface } from "../../common/interfaces";
 
-interface Item {
-  id: number;
-  name: string;
-  price: number;
-  category_name: string;
-}
-
-export const Item: React.FC<{ item: Item }> = ({ item }) => {
+export const Item: React.FC<{ item: ItemInterface }> = ({ item }) => {
   const navigate = useNavigate();
   const [itemImage, setItemImage] = useState<string>("");
   const [cookies] = useCookies(["token"]);
@@ -37,7 +31,7 @@ export const Item: React.FC<{ item: Item }> = ({ item }) => {
   }, [item]);
 
   return (
-      <div className={"item"}>
+      <div className={`item ${item.status == 3 ? "sold" : ""}`}>
         <img
           src={itemImage}
           alt={item.name}
