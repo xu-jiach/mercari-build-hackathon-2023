@@ -102,6 +102,7 @@ func run(ctx context.Context) int {
 	l.GET("/balance", h.GetBalance)
 	l.POST("/balance", h.AddBalance)
 	l.POST("/categories", h.AddCategory)
+	l.POST("/generateDescription", h.GenerateDescription)
 
 	// Start server
 	go func() {
