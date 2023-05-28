@@ -82,7 +82,7 @@ func NewItemRepository(db *sql.DB) ItemRepository {
 }
 
 func (r *ItemDBRepository) AddItem(ctx context.Context, item domain.Item) (domain.Item, error) {
-	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return domain.Item{}, err
 	}
