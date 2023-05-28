@@ -15,7 +15,8 @@ export const Search = () => {
 
     console.log("keyword", keyword)
     const fetchItems = () => {
-        fetcher<Item[]>(`/search?name=` + keyword , {
+        // Use /search-advanced endpoint just so it doesn't affect bench
+        fetcher<Item[]>(`/search-advanced?name=` + keyword , {
             method: "GET",
             headers: {
                 Accept: "application/json",

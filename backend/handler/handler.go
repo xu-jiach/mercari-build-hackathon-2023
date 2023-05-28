@@ -794,7 +794,7 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	// Call your repository method
 	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
 	if err != nil {
-	    c.Logger().Error(err)
+		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
@@ -803,12 +803,53 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	for _, item := range items {
 		cats, err := h.ItemRepo.GetCategories(ctx)
 		if err != nil {
-		    c.Logger().Error(err)
+			c.Logger().Error(err)
 			return c.JSON(http.StatusInternalServerError, "Internal server error")
 		}
 		for _, cat := range cats {
 			if cat.ID == item.CategoryID {
 				res = append(res, getUserItemsResponse{ID: item.ID, Name: item.Name, Price: item.Price, CategoryName: cat.Name})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// SearchItemAndInfoByKeyword Almost equivalent to SearchItemByKeyword.
+// Returns []getItemResponse
+// Kurumi created this not to disturb the bench test.
+func (h *Handler) SearchItemAndInfoByKeyword(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Retrieve the keyword from query parameters
+	keyword := c.QueryParam("name")
+	if keyword == "" {
+		// Keyword is required
+		c.Logger().Error("Keyword is required")
+		return echo.NewHTTPError(http.StatusBadRequest, "Keyword is required")
+	}
+
+	// Call your repository method
+	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
+	if err != nil {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
+	}
+
+	// return the response
+	var res []getItemResponse
+	for _, item := range items {
+		cats, err := h.ItemRepo.GetCategories(ctx)
+		if err != nil {
+			c.Logger().Error(err)
+			return c.JSON(http.StatusInternalServerError, "Internal server error")
+		}
+		for _, cat := range cats {
+			if cat.ID == item.CategoryID {
+				res = append(res, getItemResponse{ID: item.ID, Name: item.Name, CategoryID: item.CategoryID,
+					CategoryName: cat.Name, Price: item.Price,
+					Description: item.Description, Status: item.Status})
 			}
 		}
 	}
