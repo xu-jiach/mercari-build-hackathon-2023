@@ -8,14 +8,24 @@ const wrap = <T>(task: Promise<Response>): Promise<T> => {
           response
             .json()
             .then((json) => {
-              // jsonが取得できた場合だけresolve
               resolve(json);
             })
             .catch((error) => {
               reject(error);
             });
         } else {
-          reject(response);
+            response
+                .json()
+                // Return message in json to get the error message from the server
+                .then((json) => {
+                    const error = new Error();
+                    error.name = `${response.status}: ${response.statusText}`;
+                    error.message = json.message;
+                    reject(error);
+                })
+                .catch((error) => {
+                    reject(error);
+                });
         }
       })
       .catch((error) => {
