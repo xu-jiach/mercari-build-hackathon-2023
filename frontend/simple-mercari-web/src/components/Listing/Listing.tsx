@@ -54,10 +54,10 @@ export const Listing: React.FC = () => {
   };
 
   const onSelectChange = (event: SelectChangeEvent<number>) => {
-      setValues({
-          ...values,
-          [event.target.name]: event.target.value,
-      });
+    setValues({
+      ...values,
+      [event.target.name]: event.target.value,
+    });
   };
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,17 +105,17 @@ export const Listing: React.FC = () => {
     data.append("description", values.description);
     data.append("image", values.image);
 
-  // If category_id is 0, create a new category and get its id
+    // If category_id is 0, create a new category and get its id
     if (values.category_id === 0) {
       const categoryId = await addCategory();
-    if (!categoryId) {
-      toast.error("Failed to create new category. Please try again.");
-      return;
+      if (!categoryId) {
+        toast.error("Failed to create new category. Please try again.");
+        return;
+      }
+      data.append("category_id", categoryId.toString());
+    } else {
+      data.append("category_id", values.category_id.toString());
     }
-    data.append("category_id", categoryId.toString());
-  } else {
-    data.append("category_id", values.category_id.toString());
-  }
 
     if (isEditing) {
       // Send a PUT request to update the existing item
@@ -126,14 +126,14 @@ export const Listing: React.FC = () => {
           Authorization: `Bearer ${cookies.token}`,
         },
       })
-        .then(() => {
-          toast.success("Item updated successfully!");
-          sell(Number(itemId), isEditing); 
-        })
-        .catch((error: Error) => {
-          toast.error(error.message);
-          console.error("PUT error:", error);
-        });      
+          .then(() => {
+            toast.success("Item updated successfully!");
+            sell(Number(itemId), isEditing);
+          })
+          .catch((error: Error) => {
+            toast.error(error.message);
+            console.error("PUT error:", error);
+          });
     } else {
       // Send a POST request to create a new item
       fetcher(`/items`, {
@@ -143,13 +143,13 @@ export const Listing: React.FC = () => {
           Authorization: `Bearer ${cookies.token}`,
         },
       })
-        .then((res) => {
-          sell(res.id, isEditing);
-        })
-        .catch((error: Error) => {
-          toast.error(error.message);
-          console.error("POST error:", error);
-        });
+          .then((res) => {
+            sell(res.id, isEditing);
+          })
+          .catch((error: Error) => {
+            toast.error(error.message);
+            console.error("POST error:", error);
+          });
     }
   };
 
@@ -161,77 +161,77 @@ export const Listing: React.FC = () => {
           Authorization: `Bearer ${cookies.token}`,
         },
       })
-        .then((item) => {
-          const matchingCategory = categories.find(
-            (category) => category.id === item.category_id
-          );
+          .then((item) => {
+            const matchingCategory = categories.find(
+                (category) => category.id === item.category_id
+            );
 
-          setValues((prevValues) => ({
-            ...prevValues,
-            name: item.name,
-            category_id: item.category_id,
-            price: item.price,
-            description: item.description,
-            onsite_password: item.onsite_password,
-            image: item.image, // assuming item.image is the URL of the image
-          }));
-        })
-        .catch((error: Error) => {
-          toast.error(error.message);
-          console.error("GET error:", error);
-        });
+            setValues((prevValues) => ({
+              ...prevValues,
+              name: item.name,
+              category_id: item.category_id,
+              price: item.price,
+              description: item.description,
+              onsite_password: item.onsite_password,
+              image: item.image, // assuming item.image is the URL of the image
+            }));
+          })
+          .catch((error: Error) => {
+            toast.error(error.message);
+            console.error("GET error:", error);
+          });
     }
   };
 
-    const sell = (itemID: number, isEditing: boolean) =>
-    fetcher(`/sell`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${cookies.token}`,
-      },
-      body: JSON.stringify({
-        item_id: itemID,
-      }),
-    })
-      .then((_) => {
-        // only display "Item added successfully!" toast if not editing
-        if (!isEditing) {
-          toast.success("Item added successfully!");
-        }
-        navigate('/'); // Redirect to homepage
-      })
-      .catch((error: Error) => {
-        toast.error(error.message);
-        console.error("POST error:", error);
-      });
-
-    const fetchCategories = () => {
-      fetcher<Category[]>(`/items/categories`, {
-        method: "GET",
+  const sell = (itemID: number, isEditing: boolean) =>
+      fetcher(`/sell`, {
+        method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cookies.token}`,
         },
+        body: JSON.stringify({
+          item_id: itemID,
+        }),
       })
+          .then((_) => {
+            // only display "Item added successfully!" toast if not editing
+            if (!isEditing) {
+              toast.success("Item added successfully!");
+            }
+            navigate('/'); // Redirect to homepage
+          })
+          .catch((error: Error) => {
+            toast.error(error.message);
+            console.error("POST error:", error);
+          });
+
+  const fetchCategories = () => {
+    fetcher<Category[]>(`/items/categories`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    })
         .then((items) => setCategories(items))
         .catch((err) => {
           console.log(`GET error:`, err);
           toast.error(err.message);
         });
-    };
+  };
 
-      useEffect(() => {
-        fetchCategories();
-        fetchItemDetails();
-      }, []);
+  useEffect(() => {
+    fetchCategories();
+    fetchItemDetails();
+  }, []);
 
   // Effect that runs whenever the new category name changes
   useEffect(() => {
     const matchingCategory = categories.find(
-      // avoid discrepanies between lowercase and uppercase
-      (category) => category.name.toLowerCase() === newCategory.toLowerCase()
+        // avoid discrepanies between lowercase and uppercase
+        (category) => category.name.toLowerCase() === newCategory.toLowerCase()
     );
 
     if (matchingCategory) {
@@ -248,108 +248,108 @@ export const Listing: React.FC = () => {
 
 
   return(
-    <MerComponent>
-      <div className="Listing">
-        <form onSubmit={onSubmit}>
-          <div className="listing-form">
+      <MerComponent>
+        <div className="Listing">
+          <form onSubmit={onSubmit}>
+            <div className="listing-form">
               <TextField
-                id="name"
-                name="name"
-                value={values.name}
-                onChange={onValueChange}
-                label="Name"
-                required
-                sx={{ mb: 3}}
+                  id="name"
+                  name="name"
+                  value={values.name}
+                  onChange={onValueChange}
+                  label="Name"
+                  required
+                  sx={{ mb: 3}}
               />
               <FormControl>
                 <InputLabel id="category-label">Category</InputLabel>
                 <Select
-                  labelId="category-label"
-                  id="category_id"
-                  name="category_id"
-                  value={values.category_id}
-                  onChange={onSelectChange}
-                  sx={{ mt: 3 }}
+                    labelId="category-label"
+                    id="category_id"
+                    name="category_id"
+                    value={values.category_id}
+                    onChange={onSelectChange}
+                    sx={{ mt: 3 }}
                 >
                   <MenuItem value={0} disabled>Select a category</MenuItem> {/* Placeholder item */}
                   {categories &&
-                    categories.map((category) => {
-                      return <MenuItem value={category.id}>{category.name}</MenuItem>;
-                    })}
+                      categories.map((category) => {
+                        return <MenuItem value={category.id}>{category.name}</MenuItem>;
+                      })}
                 </Select>
               </FormControl>
               <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={newCategoryCheckboxChecked}
-                    onChange={(event) => {
-                      const checked = event.target.checked;
-                      setNewCategoryCheckboxChecked(checked);
-                      if (checked) {
-                        setValues({
-                          ...values,
-                          category_id: 0,
-                          newCategory: "",
-                        });
-                      } else {
-                        setValues({
-                          ...values,
-                          category_id: 0,
-                          newCategory: "",
-                        });
-                      }
-                    }}
-                  />
-                }
-                label="Create a new category"
+                  control={
+                    <Checkbox
+                        checked={newCategoryCheckboxChecked}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setNewCategoryCheckboxChecked(checked);
+                          if (checked) {
+                            setValues({
+                              ...values,
+                              category_id: 0,
+                              newCategory: "",
+                            });
+                          } else {
+                            setValues({
+                              ...values,
+                              category_id: 0,
+                              newCategory: "",
+                            });
+                          }
+                        }}
+                    />
+                  }
+                  label="Create a new category"
               />
               <TextField
-                id="newCategory"
-                name="newCategory"
-                value={newCategory}
-                onChange={onNewCategoryChange}
-                label="New Category"
-                disabled={!newCategoryCheckboxChecked}
-                sx={{ mt: 3 }}
+                  id="newCategory"
+                  name="newCategory"
+                  value={newCategory}
+                  onChange={onNewCategoryChange}
+                  label="New Category"
+                  disabled={!newCategoryCheckboxChecked}
+                  sx={{ mt: 3 }}
               />
               <TextField
-                type="number"
-                id="price"
-                name="price"
-                value={values.price}
-                onChange={onValueChange}
-                label="Price"
-                required
-                sx={{ mt: 3 }}
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={values.price}
+                  onChange={onValueChange}
+                  label="Price"
+                  required
+                  sx={{ mt: 3 }}
               />
               <TextField
-                id="description"
-                name="description"
-                value={values.description}
-                onChange={onValueChange}
-                label="Description"
-                required
-                multiline
-                rows={4}
-                sx={{ mt: 3 }}
+                  id="description"
+                  name="description"
+                  value={values.description}
+                  onChange={onValueChange}
+                  label="Description"
+                  required
+                  multiline
+                  rows={4}
+                  sx={{ mt: 3 }}
               />
               <Button variant="contained" component="label" sx={{ mt: 3 }}>
                 Upload Image
                 <input
-                  type="file"
-                  name="image"
-                  id="image"
-                  onChange={onFileChange}
-                  required
-                  hidden
+                    type="file"
+                    name="image"
+                    id="image"
+                    onChange={onFileChange}
+                    required
+                    hidden
                 />
               </Button>
               <TextField
                   id="onsite_password"
                   name="onsite_password"
                   label="Onsite password"
-                    value={values.onsite_password}
-                    onChange={onValueChange}
+                  value={values.onsite_password}
+                  onChange={onValueChange}
                   required
                   rows={1}
                   sx={{ mt: 3 }}
@@ -358,10 +358,10 @@ export const Listing: React.FC = () => {
               <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
                 List
               </Button>
-          </div>
-        </form>
-      </div>
-    </MerComponent>
+            </div>
+          </form>
+        </div>
+      </MerComponent>
   )
 
 };
