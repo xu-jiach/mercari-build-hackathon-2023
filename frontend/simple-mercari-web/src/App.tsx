@@ -25,7 +25,7 @@ export const App: React.VFC = () => {
             <Route index element={<Home />} />
             <Route path="/item/:id" element={<ItemDetail />} />
             <Route path="/user/:id" element={<UserProfile />} />
-            <Route path="/search" element={<Search />} />
+            <Route path="/search-advanced" element={<Search />} />
             <Route path="/sell" element={<Listing />} />
             <Route path="/edit-item/:itemId" element={<Listing />} />
             <Route path="/categories/:id" element={<CategoryPage />} />
