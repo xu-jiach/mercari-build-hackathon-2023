@@ -9,6 +9,7 @@ import { fetcher } from "../../helper";
 import "react-toastify/dist/ReactToastify.css";
 import Divider from '@mui/material/Divider';
 import { styled } from '@mui/material/styles';
+import { Categories } from '../Categories/Categories';
 import {Item as ItemInterface} from "../../common/interfaces";
 
 export const Home = () => {
@@ -64,11 +65,15 @@ export const Home = () => {
   );
 
   const itemListPage = (
-    <MerComponent>
-      <div>
-        <ItemList items={items} />
-      </div>
-    </MerComponent>
+    <>
+      <Categories />
+      <MerComponent>
+        <div>
+          <ItemList items={items} />
+        </div>
+      </MerComponent>
+    </>
+
   );
 
   return <>{cookies.token ? itemListPage : signUpAndSignInPage}</>;
