@@ -74,7 +74,6 @@ type ItemRepository interface {
 	GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) // for category search page
 }
 
-
 type ItemDBRepository struct {
 	*sql.DB
 }
@@ -258,8 +257,7 @@ func (r *ItemDBRepository) GetCategoryByName(ctx context.Context, name string) (
 	return cat, row.Scan(&cat.ID, &cat.Name)
 }
 
-
-//categories id page method
+// categories id page method
 func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) {
 	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE category_id = ?", categoryID)
 	if err != nil {
@@ -279,4 +277,49 @@ func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID in
 		return nil, err
 	}
 	return items, nil
+}
+
+type OnsitePurchaseRepository interface {
+	AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) error
+	ValidatePassword(ctx context.Context, itemID int64, password string) (bool, error)
+}
+
+type OnsitePurchaseDBRepository struct {
+	*sql.DB
+}
+
+func NewOnsitePurchaseRepository(db *sql.DB) OnsitePurchaseRepository {
+	return &OnsitePurchaseDBRepository{DB: db}
+}
+
+func (r *OnsitePurchaseDBRepository) AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) error {
+	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, "INSERT INTO onsite_purchase (item_id, seller_id, password) VALUES (?, ?, ?)",
+		purchase.ItemID, purchase.SellerID, purchase.Password); err != nil {
+		tx.Rollback()
+		return echo.NewHTTPError(http.StatusConflict, err)
+	} else {
+		tx.Commit()
+	}
+
+	return nil
+}
+
+func (r *OnsitePurchaseDBRepository) ValidatePassword(ctx context.Context, itemID int64, password string) (bool, error) {
+	row := r.QueryRowContext(ctx, "SELECT * FROM onsite_purchase WHERE item_id = ?", itemID)
+
+	var purchase domain.OnsitePurchase
+	if err := row.Scan(&purchase.ID, &purchase.ItemID, &purchase.SellerID, &purchase.Password); err != nil {
+		return false, err
+	}
+
+	if purchase.Password == password {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
