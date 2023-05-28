@@ -700,7 +700,7 @@ func (h *Handler) GetImage(c echo.Context) error {
 
 	contentType := http.DetectContentType(data[:512])
 	if !strings.HasPrefix(contentType, "image/") {
-		return echo.NewHTTPError(http.StatusBadRequest, "uploaded file is not an image")
+		return echo.NewHTTPError(http.StatusNotFound, "uploaded file is not an image")
 	}
 	return c.Blob(http.StatusOK, contentType, data)
 }
@@ -862,6 +862,7 @@ func (h *Handler) SearchItemByKeyword(c echo.Context) error {
 	items, err := h.ItemRepo.GetItemByKeyword(ctx, keyword)
 	if err != nil {
 		c.Logger().Error(err)
+		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
@@ -977,6 +978,7 @@ func (h *Handler) AddCategory(c echo.Context) error {
 }
 
 // search by category api
+
 func (h *Handler) GetItemsByCategory(c echo.Context) error {
 	ctx := c.Request().Context()
 
