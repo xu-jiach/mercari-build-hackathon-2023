@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -681,6 +682,9 @@ func (h *Handler) GetImage(c echo.Context) error {
 	}
 
 	data, err := h.ItemRepo.GetItemImage(ctx, int32(itemID))
+	//	print data
+	log.Printf("data: %v", data)
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "Image not found")
