@@ -85,8 +85,8 @@ func run(ctx context.Context) int {
 	e.GET("/items/categories", h.GetCategories)
 	e.POST("/register", h.Register)
 	e.POST("/login", h.Login)
-	// add the search endpoint GET /search?name=<search word>
 	e.GET("/search", h.SearchItemByKeyword)
+	e.GET("/search-advanced", h.SearchItemAndInfoByKeyword)
 
 	// Login required
 	l := e.Group("")
