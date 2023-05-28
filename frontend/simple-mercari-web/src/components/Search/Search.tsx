@@ -7,31 +7,35 @@ import {useEffect, useState} from "react";
 import "./search.css"
 import { Typography } from '@mui/material';
 import theme from "../../theme";
+import { useCookies } from "react-cookie";
+
 
 export const Search = () => {
     const [items, setItems] = useState<Item[]>([]);
     const [keyword, setKeyword] = useState<string>("");
     const query = new URLSearchParams(window.location.search);
+    const [cookies] = useCookies(["token"]);
 
     console.log("keyword", keyword)
     const fetchItems = () => {
-        // Use /search-advanced endpoint just so it doesn't affect bench
-        fetcher<Item[]>(`/search-advanced?name=` + keyword , {
-            method: "GET",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-            },
-        })
-            .then((res) => {
-                console.log("GET success:", res);
-                setItems(res);
-            })
+      const headers = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cookies.token}`,
+      };
 
-            .catch((err) => {
-                console.log(`GET error:`, err);
-            });
-    }
+      fetcher<Item[]>(`/search-advanced?name=` + keyword, {
+        method: "GET",
+        headers: headers,
+      })
+        .then((res) => {
+          console.log("GET success:", res);
+          setItems(res);
+        })
+        .catch((err) => {
+          console.log(`GET error:`, err);
+        });
+    };
 
     useEffect(() => {
         console.log("fetching items");
