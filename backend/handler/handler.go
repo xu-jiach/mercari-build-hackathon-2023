@@ -71,6 +71,10 @@ type getItemResponse struct {
 	Status       domain.ItemStatus `json:"status"`
 }
 
+type getItemPasswordResponse struct {
+	Password string `json:"password"`
+}
+
 type getCategoriesResponse struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
@@ -627,6 +631,27 @@ func (h *Handler) GetItem(c echo.Context) error {
 		Description:  item.Description,
 		Status:       item.Status,
 	})
+}
+
+// GetItemPassword returns item password.
+// It is separeted from GetItem not to affect benchmark.
+func (h *Handler) GetItemPassword(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
+
+	userID, err := getUserID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid user")
+	}
+
+	pass, err := h.OnsitePurchaseRepo.GetItemPassword(ctx, userID, int32(itemID))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+	}
+
+	return c.JSON(http.StatusOK, getItemPasswordResponse{Password: pass})
+
 }
 
 func (h *Handler) GetUserItems(c echo.Context) error {
