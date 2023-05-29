@@ -4,10 +4,11 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -16,8 +17,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	openai "github.com/sashabaranov/go-openai"
 	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/db"
 	"github.com/xu-jiach/mecari-build-hackathon-2023/backend/domain"
 	"golang.org/x/crypto/bcrypt"
@@ -158,7 +161,7 @@ type onsitePurchaseRequest struct {
 
 type generateDescriptionRequest struct {
 	Name       string `json:"name"`
-	CategoryID int    `json:"categoryID"`
+	CategoryID int64  `json:"categoryID"`
 }
 
 type generateDescriptionResponse struct {
@@ -644,6 +647,9 @@ func (h *Handler) GetItemPassword(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "invalid itemID type")
+	}
 
 	userID, err := getUserID(c)
 	if err != nil {
@@ -1071,6 +1077,39 @@ func (h *Handler) SearchItemAndInfoByKeyword(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func (h *Handler) GenerateDescription(c echo.Context) error {
+	fmt.Println("Received a request to generate a description...")
+
+	ctx := c.Request().Context()
+	req := new(generateDescriptionRequest)
+	if err := c.Bind(req); err != nil {
+		fmt.Printf("Error in Bind: %s\n", err)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	var categoryName string
+
+	// read category name from GetCategory function
+	category, err := h.ItemRepo.GetCategory(ctx, req.CategoryID)
+	if err != nil {
+		fmt.Printf("Error in GetCategory: %s\n", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	fmt.Printf("Category is %v\n", category)
+	categoryName = category.Name
+	// Use the categoryName
+	fmt.Printf("Category name is %s\n", categoryName)
+
+	description, err := generateDescriptionWithGPT3(req.Name, categoryName)
+	if err != nil {
+		fmt.Printf("Error in generateDescriptionWithGPT3: %s\n", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	fmt.Println("Description generated successfully, sending response...")
+	return c.JSON(http.StatusOK, generateDescriptionResponse{Description: description})
+}
+
 func getUserID(c echo.Context) (int64, error) {
 	user := c.Get("user").(*jwt.Token)
 	if user == nil {
@@ -1158,58 +1197,40 @@ func (h *Handler) GetItemsByCategory(c echo.Context) error {
 }
 
 // GPT 3 API
-func generateDescriptionWithGPT3(name string, categoryID int) (string, error) {
-	// Set up the request body
-	body := GPT3Request{
-		Prompt:    fmt.Sprintf("Generate a 20-word description for a product named '%s' in category %d", name, categoryID),
-		MaxTokens: 20,
+func generateDescriptionWithGPT3(name string, categoryName string) (string, error) {
+	fmt.Println("Starting the description generation process...")
+
+	// set up the client
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
 	}
 
-	// Convert the body to JSON
-	jsonBody, err := json.Marshal(body)
+	// Access the API key using os.Getenv
+	apiKey := os.Getenv("API_KEY")
+	client := openai.NewClient(apiKey)
+	ctx := context.Background()
+
+	req := openai.CompletionRequest{
+		Model:     "text-davinci-003",
+		MaxTokens: 35,
+		Prompt:    fmt.Sprintf("Imagine you are writing a product description for an online store. The product is named '%s' and it belongs to category %s. Please provide a compelling and attractive description that is around 20 words long.", name, categoryName),
+	}
+	response, err := client.CreateCompletion(ctx, req)
 	if err != nil {
+		fmt.Printf("Error in createCompletion: %s\n", err.Error())
 		return "", err
 	}
 
-	// Set up the HTTP request
-	req, err := http.NewRequest("POST", "https://api.openai.com/v1/engines/davinci-codex/completions", bytes.NewBuffer(jsonBody))
-	if err != nil {
+	if len(response.Choices) == 0 {
+		err = errors.New("Received no choices from the completion request")
+		fmt.Println(err)
 		return "", err
 	}
 
-	// Add the necessary headers
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer Your-OpenAI-API-Key")
+	// Trim whitespace from the generated description
+	description := strings.TrimSpace(response.Choices[0].Text)
 
-	// Send the HTTP request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Read and decode the HTTP response
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	var response GPT3Response
-	if err := json.Unmarshal(bodyBytes, &response); err != nil {
-		return "", err
-	}
-
-	// Use the text from the first choice
-	return response.Choices[0].Text, nil
-}
-
-func (h *Handler) GenerateDescription(c echo.Context) error {
-	req := new(generateDescriptionRequest)
-	if err := c.Bind(req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
-	}
-
-	description, err := generateDescriptionWithGPT3(req.Name, req.CategoryID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
-	}
-
-	return c.JSON(http.StatusOK, generateDescriptionResponse{Description: description})
+	fmt.Println("Description generation was successful.")
+	return description, nil
 }

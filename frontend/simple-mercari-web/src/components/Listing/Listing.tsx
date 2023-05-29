@@ -1,11 +1,13 @@
-import React, { useEffect, useState, ReactNode, ChangeEvent}  from "react";
-import {useParams, useNavigate} from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
+import DescriptionGenerator from "../Generate/Generate";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
-import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel, SelectChangeEvent } from '@mui/material';
-import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
+import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel } from '@mui/material';
+import Tooltip from '@mui/material/Tooltip';
+import { SelectChangeEvent } from '@mui/material';
 
 
 interface Category {
@@ -35,18 +37,18 @@ export const Listing: React.FC = () => {
   };
   const [values, setValues] = useState<formDataType>(initialState);
   const [categories, setCategories] = useState<Category[]>([]);
-  // Add new state to handle new category
   const [newCategory, setNewCategory] = useState<string>("");
-  // Add new state to handle new category checkbox
   const [newCategoryCheckboxChecked, setNewCategoryCheckboxChecked] = useState(false);
   const [cookies] = useCookies(["token", "userID"]);
-  // Add an itemId state variable, it's null when creating a new item, set to the item's id when editing an existing item.
   const { itemId } = useParams<{ itemId: string }>();
   const [fileName, setFileName] = useState("");
   const isEditing = itemId !== undefined;
   const navigate = useNavigate();
   const inPersonDescription = "Passcode required, only share with in person buyer"
-
+  const [allowInPersonPurchases, setAllowInPersonPurchases] = useState(false);
+  const [generateDescriptionChecked, setGenerateDescriptionChecked] = useState(false);
+  const [generatedDescription, setGeneratedDescription] = useState("");
+  const [categoryName, setCategoryName] = useState<string>("");
 
   const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues({
@@ -56,10 +58,15 @@ export const Listing: React.FC = () => {
   };
 
   const onSelectChange = (event: SelectChangeEvent<number>) => {
-      setValues({
-          ...values,
-          [event.target.name]: event.target.value,
-      });
+    const { name, value } = event.target;
+
+    setValues({
+      ...values,
+      [name]: value,
+    });
+
+    const selectedCategory = categories.find(category => category.id === value);
+    setCategoryName(selectedCategory?.name || "");
   };
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,15 +74,13 @@ export const Listing: React.FC = () => {
       ...values,
       [event.target.name]: event.target.files![0],
     });
-    setFileName(event.target.files![0]?.name || ""); // Set file name
+    setFileName(event.target.files![0]?.name || "");
   };
 
-  // This function will handle changes in the newCategory input
   const onNewCategoryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setNewCategory(event.target.value);
   };
 
-  // call the addcategory function when the checkbox is checked
   const addCategory = async () => {
     try {
       const response = await fetcher(`/categories`, {
@@ -98,6 +103,27 @@ export const Listing: React.FC = () => {
     }
   };
 
+  const generateDescription = async () => {
+    const categoryName = categories.find(category => category.id === values.category_id)?.name || '';
+    const response = await fetcher(`http://localhost:9000/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cookies.token}`,
+      },
+      body: JSON.stringify({
+        itemName: values.name,
+        categoryName: categoryName,
+      }),
+    });
+
+    if (response.status === 200) {
+      const data = await response.json();
+      setGeneratedDescription(data.description);
+    } else {
+      console.error('Failed to generate description');
+    }
+  };
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -108,20 +134,22 @@ export const Listing: React.FC = () => {
     data.append("image", values.image);
     data.append("item_password", values.item_passcode);
 
-  // If category_id is 0, create a new category and get its id
     if (values.category_id === 0) {
       const categoryId = await addCategory();
-    if (!categoryId) {
-      toast.error("Failed to create new category. Please try again.");
-      return;
+      if (!categoryId) {
+        toast.error("Failed to create a new category. Please try again.");
+        return;
+      }
+      data.append("category_id", categoryId.toString());
+    } else {
+      if (values.category_id !== 0) {
+        data.append("category_id", values.category_id.toString());
+      } else if (categoryName) {
+        data.append("category_name", categoryName);
+      }
     }
-    data.append("category_id", categoryId.toString());
-  } else {
-    data.append("category_id", values.category_id.toString());
-  }
 
     if (isEditing) {
-      // Send a PUT request to update the existing item
       fetcher(`/items/${itemId}`, {
         method: "PUT",
         body: data,
@@ -138,7 +166,6 @@ export const Listing: React.FC = () => {
           console.error("PUT error:", error);
         });
     } else {
-      // Send a POST request to create a new item
       fetcher(`/items`, {
         method: "POST",
         body: data,
@@ -165,17 +192,13 @@ export const Listing: React.FC = () => {
         },
       })
         .then((item) => {
-          const matchingCategory = categories.find(
-            (category) => category.id === item.category_id
-          );
-
           setValues((prevValues) => ({
             ...prevValues,
             name: item.name,
             category_id: item.category_id,
             price: item.price,
             description: item.description,
-            image: item.image, // assuming item.image is the URL of the image
+            image: item.image,
           }));
         })
         .catch((error: Error) => {
@@ -185,7 +208,7 @@ export const Listing: React.FC = () => {
     }
   };
 
-    const sell = (itemID: number, isEditing: boolean) =>
+  const sell = (itemID: number, isEditing: boolean) =>
     fetcher(`/sell`, {
       method: "POST",
       headers: {
@@ -198,41 +221,38 @@ export const Listing: React.FC = () => {
       }),
     })
       .then((_) => {
-        // only display "Item added successfully!" toast if not editing
         if (!isEditing) {
           toast.success("Item added successfully!");
         }
-        navigate('/'); // Redirect to homepage
+        navigate('/');
       })
       .catch((error: Error) => {
         toast.error(error.message);
         console.error("POST error:", error);
       });
 
-    const fetchCategories = () => {
-      fetcher<Category[]>(`/items/categories`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-        .then((items) => setCategories(items))
-        .catch((err) => {
-          console.log(`GET error:`, err);
-          toast.error(err.message);
-        });
-    };
+  const fetchCategories = () => {
+    fetcher<Category[]>(`/items/categories`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    })
+      .then((items) => setCategories(items))
+      .catch((err) => {
+        console.log(`GET error:`, err);
+        toast.error(err.message);
+      });
+  };
 
-      useEffect(() => {
-        fetchCategories();
-        fetchItemDetails();
-      }, []);
+  useEffect(() => {
+    fetchCategories();
+    fetchItemDetails();
+  }, []);
 
-  // Effect that runs whenever the new category name changes
   useEffect(() => {
     const matchingCategory = categories.find(
-      // avoid discrepanies between lowercase and uppercase
       (category) => category.name.toLowerCase() === newCategory.toLowerCase()
     );
 
@@ -243,142 +263,164 @@ export const Listing: React.FC = () => {
         newCategory: "",
       });
       setNewCategoryCheckboxChecked(false);
-      // clear the new category input
       setNewCategory("");
     }
   }, [newCategory, categories]);
 
-  const [allowInPersonPurchases, setAllowInPersonPurchases] = useState(false);
-
-
-
-  return(
+  return (
     <MerComponent>
       <div className="Listing">
         <h1>List a new item</h1>
         <form onSubmit={onSubmit}>
           <div className="listing-form">
-              <TextField
-                id="name"
-                name="name"
-                value={values.name}
-                onChange={onValueChange}
-                label="Name"
+            <TextField
+              id="name"
+              name="name"
+              value={values.name}
+              onChange={onValueChange}
+              label="Name"
+              required
+              sx={{ mt: 3, mb: 3 }}
+            />
+            <FormControl>
+              <InputLabel id="category-label">Category</InputLabel>
+              <Select
+                labelId="category-label"
+                id="category_id"
+                name="category_id"
+                value={values.category_id}
+                onChange={onSelectChange}
+                sx={{ mt: 3 }}
+              >
+                <MenuItem value={0} disabled>Select a category</MenuItem>
+                {categories &&
+                  categories.map((category) => {
+                    return <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>;
+                  })}
+              </Select>
+            </FormControl>
+            <FormControlLabel sx={{ mt: 3 }}
+              control={
+                <Checkbox
+                  checked={newCategoryCheckboxChecked}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setNewCategoryCheckboxChecked(checked);
+                    if (checked) {
+                      setValues({
+                        ...values,
+                        category_id: 0,
+                        newCategory: "",
+                      });
+                    } else {
+                      setValues({
+                        ...values,
+                        category_id: 0,
+                        newCategory: "",
+                      });
+                    }
+                  }}
+                />
+              }
+              label="Create a new category"
+            />
+            <TextField
+              id="newCategory"
+              name="newCategory"
+              value={newCategory}
+              onChange={onNewCategoryChange}
+              label="New Category"
+              disabled={!newCategoryCheckboxChecked}
+              sx={{ mt: 3 }}
+            />
+            <TextField
+              type="number"
+              id="price"
+              name="price"
+              value={values.price}
+              onChange={onValueChange}
+              label="Price"
+              required
+              sx={{ mt: 3 }}
+            />
+            <TextField
+              id="description"
+              name="description"
+              onChange={onValueChange}
+              label="Description"
+              placeholder={generatedDescription}
+              required
+              multiline
+              rows={4}
+              sx={{ mt: 3 }}
+              onKeyUp={(event) => {
+                if (event.key === 'Tab') {
+                  setValues({ ...values, description: generatedDescription });
+                }
+              }}
+            />
+            <FormControlLabel sx={{ mt: 3 }}
+              control={
+                <Checkbox
+                  checked={generateDescriptionChecked}
+                  onChange={(event) => setGenerateDescriptionChecked(event.target.checked)}
+                />
+              }
+              label="Generate Description"
+            />
+            <Button variant="contained" onClick={generateDescription} disabled={!generateDescriptionChecked}>
+              Generate
+            </Button>
+            <Button variant="contained" component="label" sx={{ mt: 3 }}>
+              Upload Image
+              <input
+                type="file"
+                name="image"
+                id="image"
+                onChange={onFileChange}
                 required
-                sx={{ mt: 3, mb: 3}}
+                hidden
               />
-              <FormControl>
-                <InputLabel id="category-label">Category</InputLabel>
-                <Select
-                  labelId="category-label"
-                  id="category_id"
-                  name="category_id"
-                  value={values.category_id}
-                  onChange={onSelectChange}
-                  sx={{ mt: 3 }}
-                >
-                  <MenuItem value={0} disabled>Select a category</MenuItem>
-                  {categories &&
-                    categories.map((category) => {
-                      return <MenuItem value={category.id}>{category.name}</MenuItem>;
-                    })}
-                </Select>
-              </FormControl>
+            </Button>
+            {fileName && <div className="mt1">Selected file: {fileName}</div>}
+
+            <Tooltip title={inPersonDescription} arrow>
               <FormControlLabel sx={{ mt: 3 }}
                 control={
                   <Checkbox
-                    checked={newCategoryCheckboxChecked}
-                    onChange={(event) => {
-                      const checked = event.target.checked;
-                      setNewCategoryCheckboxChecked(checked);
-                      if (checked) {
-                        setValues({
-                          ...values,
-                          category_id: 0,
-                          newCategory: "",
-                        });
-                      } else {
-                        setValues({
-                          ...values,
-                          category_id: 0,
-                          newCategory: "",
-                        });
-                      }
-                    }}
+                    checked={allowInPersonPurchases}
+                    onChange={(event) => setAllowInPersonPurchases(event.target.checked)}
                   />
                 }
-                label="Create a new category"
+                label="Allow in-person purchases"
               />
-              <TextField
-                id="newCategory"
-                name="newCategory"
-                value={newCategory}
-                onChange={onNewCategoryChange}
-                label="New Category"
-                disabled={!newCategoryCheckboxChecked}
-                sx={{ mt: 3 }}
-              />
-              <TextField
-                type="number"
-                id="price"
-                name="price"
-                value={values.price}
-                onChange={onValueChange}
-                label="Price"
-                required
-                sx={{ mt: 3 }}
-              />
-              <TextField
-                id="description"
-                name="description"
-                value={values.description}
-                onChange={onValueChange}
-                label="Description"
-                required
-                multiline
-                rows={4}
-                sx={{ mt: 3 }}
-              />
-              <Button variant="contained" component="label" sx={{ mt: 3 }}>
-                Upload Image
-                <input
-                  type="file"
-                  name="image"
-                  id="image"
-                  onChange={onFileChange}
-                  required
-                  hidden
-                />
-              </Button>
-              {fileName && <div className="mt1">Selected file: {fileName}</div>}
-
-              <Tooltip title={inPersonDescription} arrow>
-                <FormControlLabel sx={{ mt: 3 }}
-                  control={
-                    <Checkbox
-                      checked={allowInPersonPurchases}
-                      onChange={(event) => setAllowInPersonPurchases(event.target.checked)}
-                    />
-                  }
-                  label="Allow in person purchases"
-                />
-              </Tooltip>
-              <TextField
-                id="item_passcode"
-                name="item_passcode"
-                value={values.item_passcode}
-                onChange={onValueChange}
-                label="In Person Passcode"
-                sx={{ mt: 3 }}
-                disabled={!allowInPersonPurchases}
-              />
-              <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
-                List
-              </Button>
+            </Tooltip>
+            <TextField
+              id="item_passcode"
+              name="item_passcode"
+              value={values.item_passcode}
+              onChange={onValueChange}
+              label="In-Person Passcode"
+              sx={{ mt: 3 }}
+              disabled={!allowInPersonPurchases}
+            />
+            <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
+              List
+            </Button>
           </div>
         </form>
+        {values.category_id !== 0 && (
+          <DescriptionGenerator
+            itemName={values.name}
+            categoryID={values.category_id}
+            token={cookies.token}
+            onGenerated={(description: string) => setValues({ ...values, description: description })}
+          />
+        )}
+        <p>Description: {values.description}</p>
       </div>
     </MerComponent>
-  )
-
+  );
 };
+
+export default Listing;

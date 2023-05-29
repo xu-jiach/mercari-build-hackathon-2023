@@ -5,10 +5,13 @@ import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 export const Signup = () => {
-  const [name, setName] = useState<string>();
-  const [password, setPassword] = useState<string>();
+  const [name, setName] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false); // New state variable
   const [userID, setUserID] = useState<number>();
   const [_, setCookie] = useCookies(["userID"]);
 
@@ -34,14 +37,23 @@ export const Signup = () => {
       })
       .catch((err) => {
         console.log(`POST error:`, err);
-        toast.error("Error: " + err.status + " Failed to create new account");
+        toast.error("Error: " + err.status + " Failed to create a new account");
       });
+  };
+
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
     <div>
       <div className="Signup">
-        <TextField id="outlined-basic" label="username" variant="outlined" className="text-boxes" sx={{ mt: 3}}
+        <TextField
+          id="outlined-basic"
+          label="username"
+          variant="outlined"
+          className="text-boxes"
+          sx={{ mt: 3}}
           type="text"
           name="name"
           placeholder="name"
@@ -49,18 +61,35 @@ export const Signup = () => {
             setName(e.target.value);
           }}
           required
-        /> <br/>
-        <TextField id="outlined-basic" label="password" variant="outlined" className="text-boxes" sx={{ mt: 3}}
-          type="password"
+        />
+        <br/>
+        <TextField
+          id="outlined-basic"
+          label="password"
+          variant="outlined"
+          className="text-boxes"
+          sx={{ mt: 3}}
+          type={showPassword ? "text" : "password"} // Show/hide password based on state
           name="password"
           placeholder="password"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setPassword(e.target.value);
           }}
         />
-        <Button variant="outlined" onClick={onSubmit} id="sign-in-up-btn" color="error" sx={{ mt: 3}}>
+        <Button
+          variant="outlined"
+          onClick={onSubmit}
+          id="sign-in-up-btn"
+          color="error"
+          sx={{ mt: 3}}
+        >
           Signup
         </Button>
+        <FormControlLabel
+          control={<Checkbox checked={showPassword} onChange={toggleShowPassword} />}
+          label="Show Password"
+          sx={{ mt: 2 }}
+        />
         {userID ? (
           <p>Use "{userID}" as UserID for login</p>
         ) : null}
