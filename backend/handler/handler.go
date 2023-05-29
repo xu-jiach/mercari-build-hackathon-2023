@@ -153,7 +153,6 @@ type GPT3Response struct {
 }
 
 type onsitePurchaseRequest struct {
-	ItemID   int32  `json:"item_id"`
 	Password string `json:"password"`
 }
 
@@ -887,14 +886,19 @@ func (h *Handler) OnsitePurchase(c echo.Context) error {
 	ctx := c.Request().Context()
 	req := new(onsitePurchaseRequest)
 
+	if err := c.Bind(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
+
 	userID, err := getUserID(c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err)
 	}
 
 	// Return error if the itemID is out of range
-	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
-	if err != nil || itemID > math.MaxInt32 || itemID < 0 {
+	if itemID == 0 {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
 	}
@@ -961,6 +965,30 @@ func (h *Handler) OnsitePurchase(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, "successful")
+}
+
+func (h *Handler) IsOnsitePurchaseAvailable(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Return error if the itemID is out of range
+	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
+	if err != nil || itemID > math.MaxInt32 || itemID < 0 {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
+	}
+
+	// Get the item from the database.
+	isAvailable, err := h.OnsitePurchaseRepo.OnsiteExists(ctx, int32(itemID))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.Logger().Error(err)
+			return echo.NewHTTPError(http.StatusPreconditionFailed, "Item not found.")
+		}
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
+	}
+
+	return c.JSON(http.StatusOK, map[string]bool{"isAvailable": isAvailable})
 }
 
 // Search API

@@ -283,6 +283,7 @@ type OnsitePurchaseRepository interface {
 	AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) error
 	ValidatePassword(ctx context.Context, itemID int64, password string) (bool, error)
 	GetItemPassword(ctx context.Context, userID int64, itemID int32) (string, error)
+	OnsiteExists(ctx context.Context, itemID int32) (bool, error)
 }
 
 type OnsitePurchaseDBRepository struct {
@@ -314,7 +315,8 @@ func (r *OnsitePurchaseDBRepository) ValidatePassword(ctx context.Context, itemI
 	row := r.QueryRowContext(ctx, "SELECT * FROM onsite_purchase WHERE item_id = ?", itemID)
 
 	var purchase domain.OnsitePurchase
-	if err := row.Scan(&purchase.ID, &purchase.ItemID, &purchase.SellerID, &purchase.Password); err != nil {
+	var buyerID sql.NullInt64
+	if err := row.Scan(&purchase.ID, &purchase.ItemID, &purchase.SellerID, &buyerID, &purchase.Password); err != nil {
 		return false, err
 	}
 
@@ -334,4 +336,15 @@ func (r *OnsitePurchaseDBRepository) GetItemPassword(ctx context.Context, userID
 	}
 
 	return password, nil
+}
+
+func (r *OnsitePurchaseDBRepository) OnsiteExists(ctx context.Context, itemID int32) (bool, error) {
+	row := r.QueryRowContext(ctx, "SELECT EXISTS(SELECT * FROM onsite_purchase WHERE item_id = ?)", itemID)
+
+	var exists bool
+	if err := row.Scan(&exists); err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
