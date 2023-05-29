@@ -12,7 +12,7 @@ import { ItemDescription } from "./ItemDescription";
 export const ItemDetail = () => {
     const [item, setItem] = useState<Item>();
     const [itemImage, setItemImage] = useState<Blob>();
-    const [cookies] = useCookies(["token", "userID"]);
+    const [cookies] = useCookies(["userID", "userName", "token"])
     const [isOwner, setIsOwner] = useState(false);
     const params = useParams();
 

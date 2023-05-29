@@ -5,6 +5,10 @@ import { MerComponent } from "../MerComponent";
 import { toast } from "react-toastify";
 import { ItemList } from "../ItemList";
 import { fetcher } from "../../helper";
+import { Button, InputAdornment, TextField, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel, SelectChangeEvent } from '@mui/material';
+import { FaPlusCircle} from 'react-icons/fa';
+import ListItemText from '@mui/material/ListItemText';
+import OutlinedInput from '@mui/material/OutlinedInput';
 
 interface Item {
   id: number;
@@ -17,7 +21,7 @@ export const UserProfile: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [balance, setBalance] = useState<number>();
   const [addedbalance, setAddedBalance] = useState<number>();
-  const [cookies] = useCookies(["token"]);
+  const [cookies] = useCookies(["userID", "token"])
   const params = useParams();
 
   const fetchItems = () => {
@@ -78,33 +82,53 @@ export const UserProfile: React.FC = () => {
       });
   };
 
+  const formattedBalance = balance?.toLocaleString(); // Format balance with commas
+
   return (
     <MerComponent>
       <div className="UserProfile">
+        <h2>Wallet</h2>
         <div>
-          <div>
-            <h2>
-              <span>Balance: {balance}</span>
-            </h2>
-            <input
-              type="number"
-              name="balance"
-              id="MerTextInput"
-              placeholder="0"
+          <div className="wallet-balance">
+            <p><strong>Total Balance: </strong></p>
+            <div className="balance-display">
+            <h2>¥{formattedBalance}</h2>
+            <FormControl
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setAddedBalance(Number(e.target.value));
-              }}
-              required
-            />
-            <button onClick={onBalanceSubmit} id="MerButton">
-              Add balance
+              }}>
+              <InputLabel htmlFor="outlined-adornment-amount">Amount</InputLabel>
+              <OutlinedInput
+                id="outlined-adornment-amount"
+                startAdornment={<InputAdornment position="start">¥</InputAdornment>}
+                label="Amount"
+              />
+            </FormControl>
+            <button onClick={onBalanceSubmit}>
+              <FaPlusCircle color="#FF5757" />
+              <ListItemText primary="Add Balance" />
             </button>
+            </div>
           </div>
 
-          <div>
-            <h2>Item List</h2>
-            {<ItemList items={items} />}
+          <div className="transactions-and-listings">
+            <div className="transactions">
+              <h2>Recent Transactions</h2>
+              <div className="transaction-unit">
+                <p>Deposit </p>
+                <p className="deposit">+800¥</p>
+              </div>
+              <div className="transaction-unit">
+              <p>Purchase </p>
+                <p className="purchase">-8000¥</p>
+              </div>
+            </div>
+            <div className="listings">
+              <h2>Your listings</h2>
+              {<ItemList items={items} />}
+            </div>
           </div>
+
         </div>
       </div>
     </MerComponent>

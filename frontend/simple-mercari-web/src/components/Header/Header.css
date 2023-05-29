@@ -1,6 +1,7 @@
 header {
   display: flex;
   flex-direction: row;
+  justify-content: space-between;
   margin: 0.5em;
 }
 
@@ -10,8 +11,14 @@ header {
   top: 1rem;
   width: 100px;
 }
+
 .logo{
   width: 6em;
   aspect-ratio: 7/3.5;
   padding-left: 5em;
+  cursor: pointer;
+}
+
+#cur-user-icon{
+  padding-right: 5rem;
 }
