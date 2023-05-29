@@ -257,7 +257,6 @@ func (r *ItemDBRepository) GetCategoryByName(ctx context.Context, name string) (
 	return cat, row.Scan(&cat.ID, &cat.Name)
 }
 
-<<<<<<< Updated upstream
 // categories id page method
 func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) {
 	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE category_id = ?", categoryID)
@@ -292,17 +291,6 @@ type OnsitePurchaseDBRepository struct {
 func NewOnsitePurchaseRepository(db *sql.DB) OnsitePurchaseRepository {
 	return &OnsitePurchaseDBRepository{DB: db}
 }
-
-func (r *OnsitePurchaseDBRepository) AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) error {
-	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return err
-	}
-
-	if _, err := tx.ExecContext(ctx, "INSERT INTO onsite_purchase (item_id, seller_id, password) VALUES (?, ?, ?)",
-		purchase.ItemID, purchase.SellerID, purchase.Password); err != nil {
-		tx.Rollback()
-		return echo.NewHTTPError(http.StatusConflict, err)
 
 func (r *OnsitePurchaseDBRepository) AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) (domain.OnsitePurchase, error) {
 	var newPurchase domain.OnsitePurchase
