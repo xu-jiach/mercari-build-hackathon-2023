@@ -21,12 +21,12 @@ https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/667dbcb
 https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/57855b26-ebb2-451b-bef9-de8a4fc8e822
 
 ## In-person purchase "Face2Pay"
-### Owner: enter a passcode when you list the item
+### 1. Owner: enter a passcode when you list the item
 
 https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/9912eb95-d1ed-4fc9-9131-a96b1150f49c
 
-### Buyer: check "I'm with the owner!" and enter the passcode that the only seller knows
-
+### 2. Buyer: check "I'm with the owner!" and enter the passcode that the only seller knows
+The "I'm with the owner!" shows up only for the items that the seller allowed the in-person buying
 https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/3778c385-a8b9-46fc-ba66-f58e21f8131e
 
 
