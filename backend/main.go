@@ -100,6 +100,7 @@ func run(ctx context.Context) int {
 	l.POST("/sell", h.Sell)
 	l.POST("/purchase/:itemID", h.Purchase)
 	l.POST("/onsite-purchase", h.OnsitePurchase)
+	l.POST("/onsite-purchase/:itemID/available", h.IsOnsitePurchaseAvailable)
 	l.GET("/balance", h.GetBalance)
 	l.POST("/balance", h.AddBalance)
 	l.POST("/categories", h.AddCategory)

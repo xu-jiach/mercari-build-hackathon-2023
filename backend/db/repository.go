@@ -283,6 +283,7 @@ type OnsitePurchaseRepository interface {
 	AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) error
 	ValidatePassword(ctx context.Context, itemID int64, password string) (bool, error)
 	GetItemPassword(ctx context.Context, userID int64, itemID int32) (string, error)
+	OnsiteExists(ctx context.Context, itemID int32) (bool, error)
 }
 
 type OnsitePurchaseDBRepository struct {
@@ -334,4 +335,15 @@ func (r *OnsitePurchaseDBRepository) GetItemPassword(ctx context.Context, userID
 	}
 
 	return password, nil
+}
+
+func (r *OnsitePurchaseDBRepository) OnsiteExists(ctx context.Context, itemID int32) (bool, error) {
+	row := r.QueryRowContext(ctx, "SELECT EXISTS(SELECT * FROM onsite_purchase WHERE item_id = ?)", itemID)
+
+	var exists bool
+	if err := row.Scan(&exists); err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }

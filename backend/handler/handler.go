@@ -963,6 +963,30 @@ func (h *Handler) OnsitePurchase(c echo.Context) error {
 	return c.JSON(http.StatusOK, "successful")
 }
 
+func (h *Handler) IsOnsitePurchaseAvailable(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Return error if the itemID is out of range
+	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
+	if err != nil || itemID > math.MaxInt32 || itemID < 0 {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid itemID")
+	}
+
+	// Get the item from the database.
+	isAvailable, err := h.OnsitePurchaseRepo.OnsiteExists(ctx, int32(itemID))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.Logger().Error(err)
+			return echo.NewHTTPError(http.StatusPreconditionFailed, "Item not found.")
+		}
+		c.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error.")
+	}
+
+	return c.JSON(http.StatusOK, map[string]bool{"isAvailable": isAvailable})
+}
+
 // Search API
 // Search Item By Keyword
 func (h *Handler) SearchItemByKeyword(c echo.Context) error {

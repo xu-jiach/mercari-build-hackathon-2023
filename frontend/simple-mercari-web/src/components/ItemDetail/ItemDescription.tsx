@@ -11,9 +11,14 @@ type InPersonPasscode = {
     password: string;
 }
 
+type IsInPersonAvailable = {
+    isAvailable: boolean;
+}
+
 export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({item, isOwner}) => {
     const [imWithSeller, setImWithSeller] = useState(false);
     const [inPersonPasscode, setInPersonPasscode] = useState<string | null>(null);
+    const [isInPersonAvailable, setIsInPersonAvailable] = useState<boolean>(false);
 
     const navigate = useNavigate();
     const [cookies] = useCookies(["token", "userID"]);
@@ -56,9 +61,30 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
             });
     }
 
+    const getIsInPersonAvailable = () => {
+        fetcher<IsInPersonAvailable>(`/onsite-purchase/${params.id}/available`, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${cookies.token}`,
+            },
+        })
+            .then((res) => {
+                setIsInPersonAvailable(res.isAvailable);
+            })
+            .catch((err) => {
+                console.log(`GET error:`, err);
+            });
+    }
+
+
+
     useEffect(() => {
         if (isOwner) {
             getInPersonPasscode();
+        } else {
+            getIsInPersonAvailable();
         }
     }, []);
 
@@ -93,24 +119,19 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
                         <Button variant="contained" onClick={onSubmit} id="buy-now-btn" color="primary" sx={{ mt: 3}}>
                           Buy now
                         </Button>
-                        {/**Also check here if in person passcode is enabled */}
-                        <FormControlLabel sx={{ mt: 3 }}
-                          control={
-                            <Checkbox
-                              checked={imWithSeller}
-                              onChange={(event) => setImWithSeller(event.target.checked)}
-                            />
-                          }
-                          label="I'm with the owner"
-                        />
-                        <TextField sx={{ mt: 2, ml: 3 }}
-                          id="inPersonKey"
-                          name="inPersonKey"
-                          //value={values.inPersonKey}
-                          //onChange={onValueChange}
-                          label="In Person Passcode"
-                          disabled={!imWithSeller}
-                        />
+                          {isInPersonAvailable && (
+                              <>
+                                  <FormControlLabel sx={{mt: 3}}
+                                                  control={<Checkbox
+                                                      checked={imWithSeller}
+                                                      onChange={(event) => setImWithSeller(event.target.checked)}/>}
+                                                  label="I'm with the owner"/><TextField sx={{mt: 2, ml: 3}}
+                                                                                         id="inPersonKey"
+                                                                                         name="inPersonKey"
+                                                                                         label="In Person Passcode"
+                                                                                         disabled={!imWithSeller}/>
+                              </>
+                          )}
                       </>
                     )}
 
