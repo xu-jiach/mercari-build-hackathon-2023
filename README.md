@@ -1,5 +1,32 @@
 # Mini Mercari Web App
 
+## Our goal is to offer these experiences to users:
+
+  1. Basic mercari features 
+  2. Powerful auto-writing with GPT
+  3. Let's mercari in person "Face2Pay"
+
+Here are the demos for the features
+
+## Log in / Sign up
+
+https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/dd4cb806-3f63-4259-a815-41596b48f4c3
+
+## Browsing, Filtering, Searching
+
+https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/667dbcbe-11fd-45c5-bb50-61337cf9bb99
+
+## Listing
+
+https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/57855b26-ebb2-451b-bef9-de8a4fc8e822
+
+
+
+
+
+
+-----------
+
 ## Requirements
 
 * [go](https://go.dev/)
