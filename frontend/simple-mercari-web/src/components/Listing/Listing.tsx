@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { MerComponent } from "../MerComponent";
-import DescriptionGenerator from "../Generate/Generate";
+// import DescriptionGenerator from "../Generate/Generate";
 import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
 import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel } from '@mui/material';
@@ -105,7 +105,7 @@ export const Listing: React.FC = () => {
 
   const generateDescription = async () => {
     const categoryName = categories.find(category => category.id === values.category_id)?.name || '';
-    const response = await fetcher(`http://localhost:9000/generate`, {
+    const response = await fetcher(`http://loc/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -409,15 +409,15 @@ export const Listing: React.FC = () => {
             </Button>
           </div>
         </form>
-        {values.category_id !== 0 && (
+        {/* {values.category_id !== 0 && (
           <DescriptionGenerator
             itemName={values.name}
             categoryID={values.category_id}
             token={cookies.token}
             onGenerated={(description: string) => setValues({ ...values, description: description })}
           />
-        )}
-        <p>Description: {values.description}</p>
+        )} */}
+        {/* <p>Description: {values.description}</p> */}
       </div>
     </MerComponent>
   );

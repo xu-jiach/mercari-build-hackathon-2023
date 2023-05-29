@@ -2,22 +2,19 @@ import React, { useState } from 'react';
 import { useCookies } from "react-cookie";
 
 interface DescriptionGeneratorProps {
-  itemName: string;
-  categoryID: number;
-  token: any;
   onGenerated: (description: string) => void;
 }
 
 const DescriptionGenerator: React.FC<DescriptionGeneratorProps> = ({
-  itemName,
-  categoryID,
-  token,
   onGenerated,
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [generatedDescription, setGeneratedDescription] = useState("");
   const [cookies] = useCookies(["token", "userID"]);
+  const [itemName, setItemName] = useState("");
+  const [categoryID, setCategoryID] = useState(0);
+
   const handleGenerateDescription = async () => {
     try {
       setLoading(true);
@@ -52,12 +49,27 @@ const DescriptionGenerator: React.FC<DescriptionGeneratorProps> = ({
   return (
     <div>
       <h2>Generate Description</h2>
-      {/* Render loading and error messages */}
+      <div>
+        <label htmlFor="itemName">Item Name:</label>
+        <input
+          type="text"
+          id="itemName"
+          value={itemName}
+          onChange={(e) => setItemName(e.target.value)}
+        />
+      </div>
+      <div>
+        <label htmlFor="categoryID">Category ID:</label>
+        <input
+          type="number"
+          id="categoryID"
+          value={categoryID}
+          onChange={(e) => setCategoryID(parseInt(e.target.value))}
+        />
+      </div>
       {loading && <p>Loading...</p>}
       {error && <p>{error}</p>}
-      {/* Render the generated description */}
       {generatedDescription && <p>{generatedDescription}</p>}
-      {/* Button to trigger description generation */}
       <button onClick={handleGenerateDescription} disabled={loading}>
         Generate
       </button>
@@ -66,3 +78,4 @@ const DescriptionGenerator: React.FC<DescriptionGeneratorProps> = ({
 };
 
 export default DescriptionGenerator;
+
