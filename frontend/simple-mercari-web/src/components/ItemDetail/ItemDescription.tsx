@@ -188,8 +188,8 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
                 </>
             )}
 
-            <p>{item.description}</p>
-            <p>User: {item.user_id}</p> {/* TODO: Display user name instead of user id */}
+            <p className="item-description">{item.description}</p>
+            <p>Seller: User {item.user_id}</p> {/* TODO: Display user name instead of user id */}
         </div>
     );
 }
