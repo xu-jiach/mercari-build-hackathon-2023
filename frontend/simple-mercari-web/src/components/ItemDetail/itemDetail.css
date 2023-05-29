@@ -5,6 +5,7 @@
 
 .description-container {
     margin: 50px;
+    width: 40em;
 }
 
 #buy-now-btn {
@@ -25,6 +26,9 @@
     margin: 50px;
 }
 
+.item-description{
+  overflow-wrap: break-word;
+}
 @media screen and (max-width: 1000px) {
     .item-detail-container {
         flex-direction: column;
