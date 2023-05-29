@@ -20,6 +20,8 @@ https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/667dbcb
 
 https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/57855b26-ebb2-451b-bef9-de8a4fc8e822
 
+If you register the passcode for in-person purchase, you can still check the passcode for the item! (Of course others can't!)
+
 ## In-person purchase "Face2Pay"
 ### 1. Owner: enter a passcode when you list the item
 
