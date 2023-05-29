@@ -257,7 +257,6 @@ func (r *ItemDBRepository) GetCategoryByName(ctx context.Context, name string) (
 	return cat, row.Scan(&cat.ID, &cat.Name)
 }
 
-<<<<<<< Updated upstream
 // categories id page method
 func (r *ItemDBRepository) GetItemsByCategory(ctx context.Context, categoryID int64) ([]domain.Item, error) {
 	rows, err := r.QueryContext(ctx, "SELECT * FROM items WHERE category_id = ?", categoryID)
@@ -303,18 +302,6 @@ func (r *OnsitePurchaseDBRepository) AddOnsitePurchase(ctx context.Context, purc
 		purchase.ItemID, purchase.SellerID, purchase.Password); err != nil {
 		tx.Rollback()
 		return echo.NewHTTPError(http.StatusConflict, err)
-
-func (r *OnsitePurchaseDBRepository) AddOnsitePurchase(ctx context.Context, purchase domain.OnsitePurchase) (domain.OnsitePurchase, error) {
-	var newPurchase domain.OnsitePurchase
-	tx, err := r.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return domain.OnsitePurchase{}, err
-	}
-
-	if _, err := tx.ExecContext(ctx, "INSERT INTO onsite_purchase (item_id, seller_id, buyer_id, password) VALUES (?, ?, ?, ?)",
-		newPurchase.ItemId, newPurchase.SellerId, newPurchase.BuyerId, newPurchase.Password); err != nil {
-		tx.Rollback()
-		return domain.OnsitePurchase{}, echo.NewHTTPError(http.StatusConflict, err)
 	} else {
 		tx.Commit()
 	}
@@ -335,5 +322,5 @@ func (r *OnsitePurchaseDBRepository) ValidatePassword(ctx context.Context, itemI
 	} else {
 		return false, nil
 	}
-	return newPurchase, nil
+	return true, nil
 }
