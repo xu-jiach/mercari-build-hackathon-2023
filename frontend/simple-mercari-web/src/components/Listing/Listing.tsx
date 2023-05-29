@@ -19,6 +19,7 @@ type formDataType = {
   newCategory: string;
   price: number;
   description: string;
+  onsite_password: string;
   image: string | File;
 };
 
@@ -29,6 +30,7 @@ export const Listing: React.FC = () => {
     newCategory: "",
     price: 0,
     description: "",
+    onsite_password: "",
     image: "",
   };
   const [values, setValues] = useState<formDataType>(initialState);
@@ -172,6 +174,7 @@ export const Listing: React.FC = () => {
             category_id: item.category_id,
             price: item.price,
             description: item.description,
+            onsite_password: item.onsite_password,
             image: item.image, // assuming item.image is the URL of the image
           }));
         })
@@ -348,28 +351,16 @@ export const Listing: React.FC = () => {
                 />
               </Button>
               {fileName && <div className="mt1">Selected file: {fileName}</div>}
-
-              <Tooltip title={inPersonDescription} arrow>
-                <FormControlLabel sx={{ mt: 3 }}
-                  control={
-                    <Checkbox
-                      checked={allowInPersonPurchases}
-                      onChange={(event) => setAllowInPersonPurchases(event.target.checked)}
-                    />
-                  }
-                  label="Allow in person purchases"
-                />
-              </Tooltip>
               <TextField
-                id="inPersonKey"
-                name="inPersonKey"
-                //value={values.inPersonKey}
-                onChange={onValueChange}
-                label="In Person Passcode"
-                sx={{ mt: 3 }}
-                disabled={!allowInPersonPurchases}
+                  id="onsite_password"
+                  name="onsite_password"
+                  label="Onsite password"
+                    value={values.onsite_password}
+                    onChange={onValueChange}
+                  required
+                  rows={1}
+                  sx={{ mt: 3 }}
               />
-
               <Button variant="contained" type="submit" color="secondary" sx={{ mt: 3 }}>
                 List
               </Button>
