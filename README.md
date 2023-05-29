@@ -27,9 +27,12 @@ https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/9912eb9
 
 ### 2. Buyer: check "I'm with the owner!" and enter the passcode that the only seller knows
 The "I'm with the owner!" shows up only for the items that the seller allowed the in-person buying
+
 https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/3778c385-a8b9-46fc-ba66-f58e21f8131e
 
+## Transaction History
 
+https://github.com/xu-jiach/mercari-build-hackathon-2023/assets/90857923/4f63cd55-3c0e-4214-b465-e5402abbf39f
 
 
 
