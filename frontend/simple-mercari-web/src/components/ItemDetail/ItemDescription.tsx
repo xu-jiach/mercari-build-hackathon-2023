@@ -15,10 +15,15 @@ type IsInPersonAvailable = {
     isAvailable: boolean;
 }
 
+type formDataType = {
+    inPersonKey: string;
+}
+
 export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({item, isOwner}) => {
     const [imWithSeller, setImWithSeller] = useState(false);
     const [inPersonPasscode, setInPersonPasscode] = useState<string | null>(null);
     const [isInPersonAvailable, setIsInPersonAvailable] = useState<boolean>(false);
+    const [values, setValues] = useState<formDataType>({inPersonKey: ""});
 
     const navigate = useNavigate();
     const [cookies] = useCookies(["token", "userID"]);
@@ -78,7 +83,46 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
             });
     }
 
+    const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setValues({
+            ...values,
+            [event.target.name]: event.target.value,
+        });
+    };
 
+    const handlePassSubmit = (
+        e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>
+    ) => {
+        e.preventDefault();
+        const data = new FormData();
+        console.log(values.inPersonKey)
+        // data.append("item_id", params.id ?? "");
+        fetcher<Item[]>(`/onsite-purchase/${params.id}`, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${cookies.token}`,
+            },
+            body: JSON.stringify({
+                password: values.inPersonKey,
+            }),
+        })
+            .then((res) => {
+                console.log(`POST response:`, res);
+                toast.success("Successfully purchased!");
+                window.location.reload();
+            })
+            .catch((err) => {
+                console.log(`POST error:`, err);
+                toast.error("Error: " + err.message);
+            });
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.nativeEvent.isComposing || e.key !== 'Enter') return
+        handlePassSubmit(e);
+    }
 
     useEffect(() => {
         if (isOwner) {
@@ -128,6 +172,9 @@ export const ItemDescription: React.FC<{ item: Item, isOwner: boolean}>  = ({ite
                                                   label="I'm with the owner"/><TextField sx={{mt: 2, ml: 3}}
                                                                                          id="inPersonKey"
                                                                                          name="inPersonKey"
+                                                                                         value={values.inPersonKey}
+                                                                                         onChange={onValueChange}
+                                                                                         onKeyDown={handleKeyDown}
                                                                                          label="In Person Passcode"
                                                                                          disabled={!imWithSeller}/>
                               </>

@@ -315,7 +315,8 @@ func (r *OnsitePurchaseDBRepository) ValidatePassword(ctx context.Context, itemI
 	row := r.QueryRowContext(ctx, "SELECT * FROM onsite_purchase WHERE item_id = ?", itemID)
 
 	var purchase domain.OnsitePurchase
-	if err := row.Scan(&purchase.ID, &purchase.ItemID, &purchase.SellerID, &purchase.Password); err != nil {
+	var buyerID sql.NullInt64
+	if err := row.Scan(&purchase.ID, &purchase.ItemID, &purchase.SellerID, &buyerID, &purchase.Password); err != nil {
 		return false, err
 	}
 
