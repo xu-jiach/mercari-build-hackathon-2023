@@ -1060,8 +1060,9 @@ func (h *Handler) GenerateDescription(c echo.Context) error {
 	}
 
 	var categoryName string
+
 	// read category name from GetCategory function
-	category, err := h.ItemRepo.GetCategory(ctx, req.CategoryID) // Replace 123 with the desired category ID
+	category, err := h.ItemRepo.GetCategory(ctx, req.CategoryID)
 	if err != nil {
 		fmt.Printf("Error in GetCategory: %s\n", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err)

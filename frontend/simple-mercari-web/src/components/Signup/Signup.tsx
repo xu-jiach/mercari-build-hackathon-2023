@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import { fetcher } from "../../helper";
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 export const Signup = () => {
   const [name, setName] = useState<string>("");
@@ -35,7 +37,7 @@ export const Signup = () => {
       })
       .catch((err) => {
         console.log(`POST error:`, err);
-        toast.error("Error: " + err.status + " Failed to create new account");
+        toast.error("Error: " + err.status + " Failed to create a new account");
       });
   };
 
@@ -83,15 +85,11 @@ export const Signup = () => {
         >
           Signup
         </Button>
-        <Button
-          variant="outlined"
-          onClick={toggleShowPassword} // Toggle show/hide password
-          id="show-password-btn"
-          color="primary"
-          sx={{ mt: 2}}
-        >
-          {showPassword ? "Hide Password" : "Show Password"}
-        </Button>
+        <FormControlLabel
+          control={<Checkbox checked={showPassword} onChange={toggleShowPassword} />}
+          label="Show Password"
+          sx={{ mt: 2 }}
+        />
         {userID ? (
           <p>Use "{userID}" as UserID for login</p>
         ) : null}
@@ -99,4 +97,3 @@ export const Signup = () => {
     </div>
   );
 };
-

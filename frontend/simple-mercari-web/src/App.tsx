@@ -12,7 +12,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme';
 import { CategoryPage } from "./components/CategoryPage/CategoryPage";
 import { Search } from "./components/Search";
-
+// import { DescriptionGenerator } from "./components/Generate";
 
 export const App: React.VFC = () => {
   return (
@@ -30,6 +30,8 @@ export const App: React.VFC = () => {
             <Route path="/sell" element={<Listing />} />
             <Route path="/edit-item/:itemId" element={<Listing />} />
             <Route path="/categories/:id" element={<CategoryPage />} />
+            {/* <Route path="/generate-description" element={<DescriptionGenerator />} /> */}
+
           </Routes>
         </div>
       </BrowserRouter>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useCookies } from "react-cookie";
 
 interface DescriptionGeneratorProps {
   itemName: string;
@@ -13,17 +14,20 @@ const DescriptionGenerator: React.FC<DescriptionGeneratorProps> = ({
   token,
   onGenerated,
 }) => {
-  useEffect(() => {
-    generateDescription();
-  }, [itemName, categoryID, token]);
-
-  const generateDescription = async () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [generatedDescription, setGeneratedDescription] = useState("");
+  const [cookies] = useCookies(["token", "userID"]);
+  const handleGenerateDescription = async () => {
     try {
+      setLoading(true);
+      setError("");
+
       const response = await fetch("http://localhost:9000/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${cookies.token}`,
         },
         body: JSON.stringify({
           itemName,
@@ -36,14 +40,29 @@ const DescriptionGenerator: React.FC<DescriptionGeneratorProps> = ({
       }
 
       const responseData = await response.json();
-      const description = responseData.description;
-      onGenerated(description);
+      setGeneratedDescription(responseData.description);
+      onGenerated(responseData.description);
     } catch (error) {
-      console.error("An error occurred while generating the description:", error);
+      setError("An error occurred while generating the description.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  return null; // Since we don't render any elements in this component
+  return (
+    <div>
+      <h2>Generate Description</h2>
+      {/* Render loading and error messages */}
+      {loading && <p>Loading...</p>}
+      {error && <p>{error}</p>}
+      {/* Render the generated description */}
+      {generatedDescription && <p>{generatedDescription}</p>}
+      {/* Button to trigger description generation */}
+      <button onClick={handleGenerateDescription} disabled={loading}>
+        Generate
+      </button>
+    </div>
+  );
 };
 
 export default DescriptionGenerator;

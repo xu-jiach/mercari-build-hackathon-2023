@@ -1,0 +1,32 @@
+/* ItemImage.css */
+
+.image-container {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+  }
+  
+  .item-image {
+    display: block;
+    width: 480px;
+    height: 480px;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+  }
+  
+  .zoomed-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  
+  .image-container.zoomed .item-image {
+    transform: scale(2); /* Adjust the zoom level as desired */
+  }
+  
+  .image-container.zoomed .zoomed-image {
+    display: block;
+  }
+  
