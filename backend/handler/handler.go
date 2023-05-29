@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	openai "github.com/sashabaranov/go-openai"
@@ -646,6 +648,9 @@ func (h *Handler) GetItemPassword(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	itemID, err := strconv.ParseInt(c.Param("itemID"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "invalid itemID type")
+	}
 
 	userID, err := getUserID(c)
 	if err != nil {
@@ -1164,11 +1169,17 @@ func (h *Handler) GetItemsByCategory(c echo.Context) error {
 
 // GPT 3 API
 func generateDescriptionWithGPT3(name string, categoryName string) (string, error) {
-
 	fmt.Println("Starting the description generation process...")
 
 	// set up the client
-	client := openai.NewClient("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")
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Access the API key using os.Getenv
+	apiKey := os.Getenv("API_KEY")
+	client := openai.NewClient(apiKey)
 	ctx := context.Background()
 
 	req := openai.CompletionRequest{
@@ -1188,7 +1199,9 @@ func generateDescriptionWithGPT3(name string, categoryName string) (string, erro
 		return "", err
 	}
 
-	// Use the text from the first choice
+	// Trim whitespace from the generated description
+	description := strings.TrimSpace(response.Choices[0].Text)
+
 	fmt.Println("Description generation was successful.")
-	return response.Choices[0].Text, nil
+	return description, nil
 }
